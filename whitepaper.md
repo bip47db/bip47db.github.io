@@ -84,9 +84,8 @@ Each BIP47DB inscription contains a single compressed binary blob with the follo
 
 The body consists of N concatenated 81-byte records, where N equals the record count field. Each record comprises the 80-byte raw BIP47 payment code followed by a 1-byte per-record flags field:
 
-|              |          |                                                                                                      |
-|--------------|----------|------------------------------------------------------------------------------------------------------|
 | **Field**    | **Size** | **Description**                                                                                      |
+|--------------|----------|------------------------------------------------------------------------------------------------------|
 | Payment code | 80 bytes | Raw BIP47 v1/v2 payment code (version, features, pubkey, chain code, padding)                        |
 | Record flags | 1 byte   | Bit 0: Samourai/Ashigaru Segwit extension (features byte signals Segwit support); Bits 1–7: reserved |
 
@@ -124,9 +123,7 @@ Canonical BIP47DB deposit address derivation
 2. Construct a P2TR (taproot) address using H as
    the internal key with no script path
 
-Because no one knows the discrete logarithm of H,
-the address is provably unspendable. Sats sent to
-this address are permanently locked.
+Because no one knows the discrete logarithm of H, the address is provably unspendable. Sats sent to this address are permanently locked.
 ```
 
 This creates a single, deterministic address that any wallet or indexer can independently compute. Discovery then requires only a standard address history query — the most basic operation any Bitcoin infrastructure supports. Every transaction to this address is a BIP47DB batch. No Ordinals indexer, no MIME type filtering, and no full chain scan is needed.
