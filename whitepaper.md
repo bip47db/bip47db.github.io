@@ -171,12 +171,12 @@ For a batch of 100 payment codes:
 | Raw body size                  | 100 × 81 = 8,100 bytes  |
 | Header + trailer               | 40 + 69 = 109 bytes     |
 | Uncompressed total             | 8,209 bytes             |
-| Compressed (~45%)              | ~4,515 bytes            |
-| Envelope overhead (~6%)        | ~270 bytes              |
-| Total witness data             | ~4,750 bytes            |
-| Effective vBytes (witness ÷ 4) | ~1,188 vB               |
-| Cost at 5 sat/vB               | ~5,940 sats (~$3.92)   |
-| Cost at 20 sat/vB              | ~23,760 sats (~$15.68) |
+| Compressed (~45%)              | \~4,515 bytes           |
+| Envelope overhead (~6%)        | \~270 bytes             |
+| Total witness data             | \~4,750 bytes           |
+| Effective vBytes (witness ÷ 4) | \~1,188 vB              |
+| Cost at 5 sat/vB               | \~5,940 sats (\~\$3.92) |
+| Cost at 20 sat/vB              | \~23,760 sats (\~\$15.68) |
 
 *Costs calculated at \$66,000 USD per BTC.*
 
