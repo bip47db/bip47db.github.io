@@ -112,10 +112,6 @@ The compressed blob is inscribed with the content-type application/x-bip47db to 
 
 To provide a discovery mechanism that does not depend on Ordinals-specific indexing infrastructure, the protocol specifies a canonical, provably unspendable Bitcoin address to which all BIP47DB inscription reveal transactions SHOULD send their first output. This address is derived from a nothing-up-my-sleeve value:
 
-<div class="technical-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
-
 ```text
 // Canonical BIP47DB deposit address derivation
 //
@@ -131,31 +127,17 @@ To provide a discovery mechanism that does not depend on Ordinals-specific index
 // this address are permanently locked.
 ```
 
-</div>
-
 This creates a single, deterministic address that any wallet or indexer can independently compute. Discovery then requires only a standard address history query — the most basic operation any Bitcoin infrastructure supports. Every transaction to this address is a BIP47DB batch. No Ordinals indexer, no MIME type filtering, and no full chain scan is needed.
 
 The two discovery mechanisms are complementary: the MIME content-type serves Ordinals-aware infrastructure, while the canonical address serves any Bitcoin node, Electrum server, or block explorer. Publishers SHOULD use both by inscribing with the correct content-type and directing the reveal transaction’s first output to the canonical address. Indexers SHOULD monitor both channels and deduplicate.
 
-<div class="code-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
-
-```text
 Because the address is provably unspendable, the inscribed sats are permanently locked at this address. This design is deliberately chosen over an anyone-can-spend address (where the private key would be made public) to avoid creating outbound transaction flows from the deposit address. With an unspendable address, there is no possibility of coins flowing from the BIP47DB address to sanctioned or illicit addresses, which would create false on-chain associations for publishers. The deposit address is inflow-only, making it a dead end in the transaction graph that cannot be weaponised for chain analysis tainting or dust poisoning attacks. This adds a small dust-output cost per batch (typically 546 sats, approximately $0.36 at $66,000/BTC) but guarantees that no party can claim control over the deposit address or selectively spend away inscription UTXOs.
-```
-
-</div>
 
 ## 6. Example Transaction Structure
 
 ### 6.1 Inscription Envelope
 
 BIP47DB inscriptions use the standard Ordinals envelope within a taproot witness: <sup>[7]</sup>
-
-<div class="technical-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
 
 ```text
 Witness:
@@ -172,8 +154,6 @@ OP_PUSH <compressed_chunk_2>
 OP_PUSH <compressed_chunk_N>
 OP_ENDIF
 ```
-
-</div>
 
 ### 6.2 Transaction Layout
 
@@ -239,10 +219,6 @@ An indexer reconstructing the full database from BIP47DB inscriptions would mate
 
 **SQLite schema:**
 
-<div class="code-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
-
 ```sql
 CREATE TABLE bip47db_batches (
 batch_id INTEGER PRIMARY KEY,
@@ -265,8 +241,6 @@ first_seen_block INTEGER NOT NULL
 CREATE INDEX idx_notif_addr ON bip47db_codes(notif_address);
 CREATE INDEX idx_pubkey_x ON bip47db_codes(pubkey_x);
 ```
-
-</div>
 
 ## 8. Cost Analysis
 
@@ -361,10 +335,6 @@ Indexers SHOULD monitor both channels and deduplicate by content. The canonical 
 
 ### 11.2 Decoding Pipeline
 
-<div class="technical-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
-
 ```text
 1. Fetch inscription content (compressed blob)
 2. Decompress with zlib
@@ -387,15 +357,9 @@ f. Store in database
 6. Follow prev_txid chain to link batches
 ```
 
-</div>
-
 ### 11.3 API Endpoints
 
 A BIP47DB indexer would expose a minimal REST API compatible with existing wallet expectations:
-
-<div class="technical-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
 
 ```text
 GET /api/v1/code/{notification_address}
@@ -407,8 +371,6 @@ GET /api/v1/batch/{batch_number}
 GET /api/v1/stats
 -> { total_codes, total_batches, latest_batch, latest_block }
 ```
-
-</div>
 
 Crucially, anyone can run this indexer. It requires only a Bitcoin full node (or access to an Ordinals indexer) and a modest database. Multiple independent indexers can cross-validate each other, as the underlying data is deterministically derived from the blockchain.
 
@@ -518,10 +480,6 @@ The following reference implementation uses only plain JavaScript APIs available
 
 ### A.1 Helper Functions
 
-<div class="code-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
-
 ```javascript
 // Plain JS helpers — no Node.js Buffer or require
 function textToBytes(str) {
@@ -556,13 +514,7 @@ return new Uint8Array(hash);
 }
 ```
 
-</div>
-
 ### A.2 Encoding a BIP47DB Batch
-
-<div class="code-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
 
 ```javascript
 // Requires: pako (e.g. <script src="[https://cdn.jsdelivr.net/](https://cdn.jsdelivr.net/)
@@ -594,13 +546,7 @@ return pako.deflate(uncompressed, { level: 9 });
 }
 ```
 
-</div>
-
 ### A.3 Decoding a BIP47DB Batch
-
-<div class="code-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
 
 ```javascript
 async function decodeBatch(compressed, ecc) {
@@ -636,15 +582,9 @@ return { version, count, codes, prevTxid };
 }
 ```
 
-</div>
-
 ### A.4 secp256k1 Validation
 
 Payment code validation uses the tiny-secp256k1 package, a minimal WebAssembly-based secp256k1 implementation that works in both browsers and Node.js. It can be loaded from a CDN or installed via npm.
-
-<div class="code-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
 
 ```javascript
 // Using tiny-secp256k1 for validation
@@ -666,13 +606,7 @@ return ecc.isPoint(compressedKey);
 }
 ```
 
-</div>
-
 ### A.5 Querying an Indexer
-
-<div class="code-block">
-
-![](data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHZpZXdib3g9IjAgMCAxNiAxNiIgZmlsbD0iY3VycmVudENvbG9yIj48cGF0aCBkPSJNMCA2Ljc1QzAgNS43ODQuNzg0IDUgMS43NSA1aDEuNWEuNzUuNzUgMCAwMTAgMS41aC0xLjVhLjI1LjI1IDAgMDAtLjI1LjI1djcuNWMwIC4xMzguMTEyLjI1LjI1LjI1aDcuNWEuMjUuMjUgMCAwMC4yNS0uMjV2LTEuNWEuNzUuNzUgMCAwMTEuNSAwdjEuNUExLjc1IDEuNzUgMCAwMTkuMjUgMTZoLTcuNUExLjc1IDEuNzUgMCAwMTAgMTQuMjV6TTUgMS43NUM1IC43ODQgNS43ODQgMCA2Ljc1IDBoNy41QzE1LjIxNiAwIDE2IC43ODQgMTYgMS43NXY3LjVBMS43NSAxLjc1IDAgMDExNC4yNSAxMWgtNy41QTEuNzUgMS43NSAwIDAxNSA5LjI1em0xLjc1LS4yNWEuMjUuMjUgMCAwMC0uMjUuMjV2Ny41YzAgLjEzOC4xMTIuMjUuMjUuMjVoNy41YS4yNS4yNSAwIDAwLjI1LS4yNXYtNy41YS4yNS4yNSAwIDAwLS4yNS0uMjV6Ij48L3BhdGg+PC9zdmc+)
 
 ```javascript
 async function recoverOutgoingConnections(notifAddresses) {
@@ -698,27 +632,25 @@ return results;
 }
 ```
 
-</div>
-
 ## Appendix B: References
 
-**[1]** Ranvier, J. (2015). *BIP47: Reusable Payment Codes for Hierarchical Deterministic Wallets.* <a href="[https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki"](https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki") target="_blank" rel="noopener">[https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki)</a>
+**[1]** Ranvier, J. (2015). *BIP47: Reusable Payment Codes for Hierarchical Deterministic Wallets.* [[https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki)](https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki)
 
 *Cited in:* Sections 1, 2.1, 3.1, 7.1, 10, 15.1
 
-**[2]** bitcoiner.guide. *PayNyms.* <a href="[https://bitcoiner.guide/paynym/"](https://bitcoiner.guide/paynym/") target="_blank" rel="noopener">[https://bitcoiner.guide/paynym/](https://bitcoiner.guide/paynym/)</a>
+**[2]** bitcoiner.guide. *PayNyms.* [[https://bitcoiner.guide/paynym/](https://bitcoiner.guide/paynym/)](https://bitcoiner.guide/paynym/)
 
 *Cited in:* Sections 1, 2.2, 12.3
 
-**[3]** Bitcoin Wiki. *BIP 0047.* <a href="[https://en.bitcoin.it/wiki/BIP_0047"](https://en.bitcoin.it/wiki/BIP_0047") target="_blank" rel="noopener">[https://en.bitcoin.it/wiki/BIP_0047](https://en.bitcoin.it/wiki/BIP_0047)</a>
+**[3]** Bitcoin Wiki. *BIP 0047.* [[https://en.bitcoin.it/wiki/BIP_0047](https://en.bitcoin.it/wiki/BIP_0047)](https://en.bitcoin.it/wiki/BIP_0047)
 
 *Cited in:* Sections 2.1, 4, 7.1, 7.2, 10
 
-**[4]** Ashigaru Open Source Project (2024). *Announcement: a new PayNym directory.* <a href="[https://ashigaru.rs/news/announcement-paynyms/"](https://ashigaru.rs/news/announcement-paynyms/") target="_blank" rel="noopener">[https://ashigaru.rs/news/announcement-paynyms/](https://ashigaru.rs/news/announcement-paynyms/)</a>
+**[4]** Ashigaru Open Source Project (2024). *Announcement: a new PayNym directory.* [[https://ashigaru.rs/news/announcement-paynyms/](https://ashigaru.rs/news/announcement-paynyms/)](https://ashigaru.rs/news/announcement-paynyms/)
 
 *Cited in:* Sections 2.1, 2.2, 2.3, 3.1, 7.2, 12.2, 17
 
-**[5]** Ashigaru Open Source Project. *Proof of Ownership.* <a href="[https://ashigaru.rs/proof-of-ownership/"](https://ashigaru.rs/proof-of-ownership/") target="_blank" rel="noopener">[https://ashigaru.rs/proof-of-ownership/](https://ashigaru.rs/proof-of-ownership/)</a>
+**[5]** Ashigaru Open Source Project. *Proof of Ownership.* [[https://ashigaru.rs/proof-of-ownership/](https://ashigaru.rs/proof-of-ownership/)](https://ashigaru.rs/proof-of-ownership/)
 
 *Cited in:* Sections 2.2, 12.2
 
@@ -726,34 +658,34 @@ return results;
 
 *Cited in:* Sections 2.3, 14, 17
 
-**[7]** Rodarmor, C. (2023). *Ordinals: Inscriptions on Bitcoin.* <a href="[https://docs.ordinals.com/"](https://docs.ordinals.com/") target="_blank" rel="noopener">[https://docs.ordinals.com/](https://docs.ordinals.com/)</a>
+**[7]** Rodarmor, C. (2023). *Ordinals: Inscriptions on Bitcoin.* [[https://docs.ordinals.com/](https://docs.ordinals.com/)](https://docs.ordinals.com/)
 
 *Cited in:* Sections 4, 6.1
 
-**[8]** *BIP32: Hierarchical Deterministic Wallets.* <a href="[https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki"](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki") target="_blank" rel="noopener">[https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)</a>
+**[8]** *BIP32: Hierarchical Deterministic Wallets.* [[https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 
 *Cited in:* Section 7.2
 
-**[9]** Rodarmor, C. (2023). *Runes: A fungible token protocol for Bitcoin.* <a href="[https://rodarmor.com/blog/runes/"](https://rodarmor.com/blog/runes/") target="_blank" rel="noopener">[https://rodarmor.com/blog/runes/](https://rodarmor.com/blog/runes/)</a>
+**[9]** Rodarmor, C. (2023). *Runes: A fungible token protocol for Bitcoin.* [[https://rodarmor.com/blog/runes/](https://rodarmor.com/blog/runes/)](https://rodarmor.com/blog/runes/)
 
 *Cited in:* Sections 9.1, 9.3, 9.4, 9.5
 
-**[10]** Xverse. *What Are Bitcoin Runes? A Beginner’s Guide to the New Token Protocol.* <a href="[https://www.xverse.app/blog/bitcoin-runes"](https://www.xverse.app/blog/bitcoin-runes") target="_blank" rel="noopener">[https://www.xverse.app/blog/bitcoin-runes](https://www.xverse.app/blog/bitcoin-runes)</a>
+**[10]** Xverse. *What Are Bitcoin Runes? A Beginner’s Guide to the New Token Protocol.* [[https://www.xverse.app/blog/bitcoin-runes](https://www.xverse.app/blog/bitcoin-runes)](https://www.xverse.app/blog/bitcoin-runes)
 
 *Cited in:* Sections 9.1, 9.4
 
-**[11]** paymentcode.io. *BIP47 Interactive Payment Code Explorer.* <a href="[https://paymentcode.io/"](https://paymentcode.io/") target="_blank" rel="noopener">[https://paymentcode.io/](https://paymentcode.io/)</a>
+**[11]** paymentcode.io. *BIP47 Interactive Payment Code Explorer.* [[https://paymentcode.io/](https://paymentcode.io/)](https://paymentcode.io/)
 
 *Cited in:* General reference
 
-**[12]** *BIP44: Multi-Account Hierarchy for Deterministic Wallets.* <a href="[https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki") target="_blank" rel="noopener">[https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)</a>
+**[12]** *BIP44: Multi-Account Hierarchy for Deterministic Wallets.* [[https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)
 
 *Cited in:* General reference
 
-**[13]** sparrowwallet/sparrow, GitHub Issue \#617. *In some cases Sparrow doesn’t create BIP47 notification transaction. This may result in loss of funds.* <a href="[https://github.com/sparrowwallet/sparrow/issues/617"](https://github.com/sparrowwallet/sparrow/issues/617") target="_blank" rel="noopener">[https://github.com/sparrowwallet/sparrow/issues/617](https://github.com/sparrowwallet/sparrow/issues/617)</a>
+**[13]** sparrowwallet/sparrow, GitHub Issue \#617. *In some cases Sparrow doesn’t create BIP47 notification transaction. This may result in loss of funds.* [[https://github.com/sparrowwallet/sparrow/issues/617](https://github.com/sparrowwallet/sparrow/issues/617)](https://github.com/sparrowwallet/sparrow/issues/617)
 
 *Cited in:* Section 3.1
 
-**[14]** sparrowwallet/sparrow, GitHub Issue \#1982. *Sending to a BIP47 payment code doesn’t require a notification transaction to be made.* <a href="[https://github.com/sparrowwallet/sparrow/issues/1982"](https://github.com/sparrowwallet/sparrow/issues/1982") target="_blank" rel="noopener">[https://github.com/sparrowwallet/sparrow/issues/1982](https://github.com/sparrowwallet/sparrow/issues/1982)</a>
+**[14]** sparrowwallet/sparrow, GitHub Issue \#1982. *Sending to a BIP47 payment code doesn’t require a notification transaction to be made.* [[https://github.com/sparrowwallet/sparrow/issues/1982](https://github.com/sparrowwallet/sparrow/issues/1982)](https://github.com/sparrowwallet/sparrow/issues/1982)
 
 *Cited in:* Section 3.1
