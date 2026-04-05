@@ -44,4 +44,4 @@ If you find an error, have a question, or want to suggest an improvement, please
 
 ## Questions?
 
-Open an issue or reach out via the contact methods listed in the whitepaper.
+Open an issue or reach out via OpenPGP email.
