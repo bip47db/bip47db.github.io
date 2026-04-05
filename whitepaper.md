@@ -191,15 +191,10 @@ For a batch of 100 payment codes:
 
 Each record in the body comprises an 80-byte raw BIP47 v1 payment code followed by a 1-byte per-record flags field: <sup>[1] [3]</sup>
 
-|-----------------|----------|--------------|----------------------------------------------------|
-| **Byte offset** | **Size** | **Field**    | **Description**                                    |
-| 0               | 1 byte   | Version      | 0x01 for v1 payment codes                          |
-| 1               | 1 byte   | Features     | BIP47 features bit field (0x00 for spec-compliant) |
-| 2               | 1 byte   | Sign         | 0x02 or 0x03 (compressed pubkey prefix)            |
-| 3–34            | 32 bytes | X value      | Public key x-coordinate on secp256k1               |
-| 35–66           | 32 bytes | Chain code   | BIP32 chain code for key derivation                |
-| 67–79           | 13 bytes | Reserved     | Zero-filled (reserved for future use)              |
-| 80              | 1 byte   | Record flags | Bit 0: Segwit extension; Bits 1–7: reserved        |
+| **Field**    | **Size** | **Description**                                                                                      |
+|--------------|----------|------------------------------------------------------------------------------------------------------|
+| Payment code | 80 bytes | Raw BIP47 v1/v2 payment code (version, features, pubkey, chain code, padding)                        |
+| Record flags | 1 byte   | Bit 0: Samourai/Ashigaru Segwit extension (features byte signals Segwit support); Bits 1–7: reserved |
 
 ### 7.2 Derivable Fields
 
