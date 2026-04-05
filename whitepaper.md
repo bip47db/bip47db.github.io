@@ -191,7 +191,6 @@ For a batch of 100 payment codes:
 
 Each record in the body comprises an 80-byte raw BIP47 v1 payment code followed by a 1-byte per-record flags field: <sup>[1] [3]</sup>
 
-|                 |          |              |                                                    |
 |-----------------|----------|--------------|----------------------------------------------------|
 | **Byte offset** | **Size** | **Field**    | **Description**                                    |
 | 0               | 1 byte   | Version      | 0x01 for v1 payment codes                          |
