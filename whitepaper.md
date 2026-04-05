@@ -94,9 +94,8 @@ The per-record flags byte addresses the Samourai/Ashigaru practice of using a cu
 
 ### 5.3 Trailer
 
-|               |          |                                                              |
-|---------------|----------|--------------------------------------------------------------|
 | **Field**     | **Size** | **Description**                                              |
+|---------------|----------|--------------------------------------------------------------|
 | Checksum      | 4 bytes  | First 4 bytes of SHA-256(header + body)                      |
 | Recovery flag | 1 byte   | Schnorr signature recovery byte for publisher key extraction |
 | Signature     | 64 bytes | Schnorr signature over SHA-256(header + body)                |
@@ -170,9 +169,8 @@ The inscription requires two transactions:
 
 For a batch of 100 payment codes:
 
-|                                |                         |
-|--------------------------------|-------------------------|
 | **Parameter**                  | **Value**               |
+|--------------------------------|-------------------------|
 | Raw body size                  | 100 × 81 = 8,100 bytes  |
 | Header + trailer               | 40 + 69 = 109 bytes     |
 | Uncompressed total             | 8,209 bytes             |
@@ -191,10 +189,15 @@ For a batch of 100 payment codes:
 
 Each record in the body comprises an 80-byte raw BIP47 v1 payment code followed by a 1-byte per-record flags field: <sup>[1] [3]</sup>
 
-| **Field**    | **Size** | **Description**                                                                                      |
-|--------------|----------|------------------------------------------------------------------------------------------------------|
-| Payment code | 80 bytes | Raw BIP47 v1/v2 payment code (version, features, pubkey, chain code, padding)                        |
-| Record flags | 1 byte   | Bit 0: Samourai/Ashigaru Segwit extension (features byte signals Segwit support); Bits 1–7: reserved |
+| **Byte offset** | **Size** | **Field**    | **Description**                                    |
+|-----------------|----------|--------------|----------------------------------------------------|
+| 0               | 1 byte   | Version      | 0x01 for v1 payment codes                          |
+| 1               | 1 byte   | Features     | BIP47 features bit field (0x00 for spec-compliant) |
+| 2               | 1 byte   | Sign         | 0x02 or 0x03 (compressed pubkey prefix)            |
+| 3–34            | 32 bytes | X value      | Public key x-coordinate on secp256k1               |
+| 35–66           | 32 bytes | Chain code   | BIP32 chain code for key derivation                |
+| 67–79           | 13 bytes | Reserved     | Zero-filled (reserved for future use)              |
+| 80              | 1 byte   | Record flags | Bit 0: Segwit extension; Bits 1–7: reserved        |
 
 ### 7.2 Derivable Fields
 
@@ -243,9 +246,8 @@ CREATE INDEX idx_pubkey_x ON bip47db_codes(pubkey_x);
 
 The following table summarises the cost of inscribing various batch sizes at different fee rates, assuming 45% zlib compression and 6% envelope overhead. All USD figures assume \$66,000 per BTC.
 
-|             |                 |              |            |               |                 |
-|-------------|-----------------|--------------|------------|---------------|-----------------|
 | **Records** | **Raw (bytes)** | **On-chain** | **vBytes** | **@ 1 sat/B** | **@ 20 sat/vB** |
+|-------------|-----------------|--------------|------------|---------------|-----------------|
 | 100         | 8,150           | 4,750        | 1,188      | \$3.13        | \$15.68         |
 | 1,000       | 80,150          | 46,700       | 11,675     | \$30.82       | \$154.10        |
 | 5,000       | 400,150         | 233,100      | 58,275     | \$153.85      | \$769.23        |
@@ -272,9 +274,8 @@ Alternatively, one could use one OP_RETURN per payment code, encoding each 80-by
 
 ### 9.3 Side-by-Side Comparison
 
-|                      |                                   |                                         |
-|----------------------|-----------------------------------|-----------------------------------------|
 | **Dimension**        | **Runes / OP_RETURN**             | **BIP47DB (Ordinals inscription)**      |
+|----------------------|-----------------------------------|-----------------------------------------|
 | Storage layer        | OP_RETURN outputs (80-byte limit) | Taproot witness (up to ~400 KB)         |
 | Data format          | Varint-encoded integers           | Compressed binary (zlib)                |
 | Bytes per record     | 80 bytes (fills entire OP_RETURN) | ~48 bytes (81 raw, compressed, batched) |
