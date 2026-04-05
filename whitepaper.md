@@ -117,18 +117,18 @@ The compressed blob is inscribed with the content-type application/x-bip47db to 
 To provide a discovery mechanism that does not depend on Ordinals-specific indexing infrastructure, the protocol specifies a canonical, provably unspendable Bitcoin address to which all BIP47DB inscription reveal transactions SHOULD send their first output. This address is derived from a nothing-up-my-sleeve value:
 
 ```text
-// Canonical BIP47DB deposit address derivation
-//
-// 1. Compute a NUMS (Nothing Up My Sleeve) point:
-// H = SHA-256(SHA-256("BIP47DB/v1"))
-// Interpret H as an x-coordinate on secp256k1
-//
-// 2. Construct a P2TR (taproot) address using H as
-// the internal key with no script path
-//
-// Because no one knows the discrete logarithm of H,
-// the address is provably unspendable. Sats sent to
-// this address are permanently locked.
+Canonical BIP47DB deposit address derivation
+
+1. Compute a NUMS (Nothing Up My Sleeve) point:
+   H = SHA-256(SHA-256("BIP47DB/v1"))
+   Interpret H as an x-coordinate on secp256k1
+
+2. Construct a P2TR (taproot) address using H as
+   the internal key with no script path
+
+Because no one knows the discrete logarithm of H,
+the address is provably unspendable. Sats sent to
+this address are permanently locked.
 ```
 
 This creates a single, deterministic address that any wallet or indexer can independently compute. Discovery then requires only a standard address history query — the most basic operation any Bitcoin infrastructure supports. Every transaction to this address is a BIP47DB batch. No Ordinals indexer, no MIME type filtering, and no full chain scan is needed.
@@ -521,7 +521,7 @@ return new Uint8Array(hash);
 ### A.2 Encoding a BIP47DB Batch
 
 ```javascript
-// Requires: pako (e.g. <script src="[https://cdn.jsdelivr.net/](https://cdn.jsdelivr.net/)
+// Requires: pako (e.g. <script src="https://cdn.jsdelivr.net/
 // npm/pako@2/dist/pako.min.js"></script>)
 const MAGIC = new Uint8Array([0x47, 0xDB]); // 2 bytes
 const FORMAT_VERSION = 1;
@@ -592,7 +592,7 @@ Payment code validation uses the tiny-secp256k1 package, a minimal WebAssembly-b
 
 ```javascript
 // Using tiny-secp256k1 for validation
-// Browser: <script src="[https://cdn.jsdelivr.net/](https://cdn.jsdelivr.net/)
+// Browser: <script src="https://cdn.jsdelivr.net/
 // npm/tiny-secp256k1@2/lib/index.js"></script>
 // Node/Bun: npm install tiny-secp256k1
 // import * as ecc from 'tiny-secp256k1';
@@ -615,8 +615,8 @@ return ecc.isPoint(compressedKey);
 ```javascript
 async function recoverOutgoingConnections(notifAddresses) {
 const indexers = [
-'[https://bip47db.example.com/api/v1',](https://bip47db.example.com/api/v1',)
-'[https://bip47db-backup.example.org/api/v1',](https://bip47db-backup.example.org/api/v1',)
+'https://bip47db.example.com/api/v1',
+'https://bip47db-backup.example.org/api/v1',
 ];
 const results = [];
 for (const addr of notifAddresses) {
@@ -638,23 +638,23 @@ return results;
 
 ## Appendix B: References
 
-**[1]** Ranvier, J. (2015). *BIP47: Reusable Payment Codes for Hierarchical Deterministic Wallets.* [[https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki)](https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki)
+**[1]** Ranvier, J. (2015). *BIP47: Reusable Payment Codes for Hierarchical Deterministic Wallets.* https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki
 
 *Cited in:* Sections 1, 2.1, 3.1, 7.1, 10, 15.1
 
-**[2]** bitcoiner.guide. *PayNyms.* [[https://bitcoiner.guide/paynym/](https://bitcoiner.guide/paynym/)](https://bitcoiner.guide/paynym/)
+**[2]** bitcoiner.guide. *PayNyms.* https://bitcoiner.guide/paynym/
 
 *Cited in:* Sections 1, 2.2, 12.3
 
-**[3]** Bitcoin Wiki. *BIP 0047.* [[https://en.bitcoin.it/wiki/BIP_0047](https://en.bitcoin.it/wiki/BIP_0047)](https://en.bitcoin.it/wiki/BIP_0047)
+**[3]** Bitcoin Wiki. *BIP 0047.* https://en.bitcoin.it/wiki/BIP_0047
 
 *Cited in:* Sections 2.1, 4, 7.1, 7.2, 10
 
-**[4]** Ashigaru Open Source Project (2024). *Announcement: a new PayNym directory.* [[https://ashigaru.rs/news/announcement-paynyms/](https://ashigaru.rs/news/announcement-paynyms/)](https://ashigaru.rs/news/announcement-paynyms/)
+**[4]** Ashigaru Open Source Project (2024). *Announcement: a new PayNym directory.* https://ashigaru.rs/news/announcement-paynyms/
 
 *Cited in:* Sections 2.1, 2.2, 2.3, 3.1, 7.2, 12.2, 17
 
-**[5]** Ashigaru Open Source Project. *Proof of Ownership.* [[https://ashigaru.rs/proof-of-ownership/](https://ashigaru.rs/proof-of-ownership/)](https://ashigaru.rs/proof-of-ownership/)
+**[5]** Ashigaru Open Source Project. *Proof of Ownership.* https://ashigaru.rs/proof-of-ownership/
 
 *Cited in:* Sections 2.2, 12.2
 
@@ -662,34 +662,34 @@ return results;
 
 *Cited in:* Sections 2.3, 14, 17
 
-**[7]** Rodarmor, C. (2023). *Ordinals: Inscriptions on Bitcoin.* [[https://docs.ordinals.com/](https://docs.ordinals.com/)](https://docs.ordinals.com/)
+**[7]** Rodarmor, C. (2023). *Ordinals: Inscriptions on Bitcoin.* https://docs.ordinals.com/
 
 *Cited in:* Sections 4, 6.1
 
-**[8]** *BIP32: Hierarchical Deterministic Wallets.* [[https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
+**[8]** *BIP32: Hierarchical Deterministic Wallets.* https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
 
 *Cited in:* Section 7.2
 
-**[9]** Rodarmor, C. (2023). *Runes: A fungible token protocol for Bitcoin.* [[https://rodarmor.com/blog/runes/](https://rodarmor.com/blog/runes/)](https://rodarmor.com/blog/runes/)
+**[9]** Rodarmor, C. (2023). *Runes: A fungible token protocol for Bitcoin.* https://rodarmor.com/blog/runes/
 
 *Cited in:* Sections 9.1, 9.3, 9.4, 9.5
 
-**[10]** Xverse. *What Are Bitcoin Runes? A Beginner’s Guide to the New Token Protocol.* [[https://www.xverse.app/blog/bitcoin-runes](https://www.xverse.app/blog/bitcoin-runes)](https://www.xverse.app/blog/bitcoin-runes)
+**[10]** Xverse. *What Are Bitcoin Runes? A Beginner’s Guide to the New Token Protocol.* https://www.xverse.app/blog/bitcoin-runes
 
 *Cited in:* Sections 9.1, 9.4
 
-**[11]** paymentcode.io. *BIP47 Interactive Payment Code Explorer.* [[https://paymentcode.io/](https://paymentcode.io/)](https://paymentcode.io/)
+**[11]** paymentcode.io. *BIP47 Interactive Payment Code Explorer.* https://paymentcode.io/
 
 *Cited in:* General reference
 
-**[12]** *BIP44: Multi-Account Hierarchy for Deterministic Wallets.* [[https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)
+**[12]** *BIP44: Multi-Account Hierarchy for Deterministic Wallets.* https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
 
 *Cited in:* General reference
 
-**[13]** sparrowwallet/sparrow, GitHub Issue \#617. *In some cases Sparrow doesn’t create BIP47 notification transaction. This may result in loss of funds.* [[https://github.com/sparrowwallet/sparrow/issues/617](https://github.com/sparrowwallet/sparrow/issues/617)](https://github.com/sparrowwallet/sparrow/issues/617)
+**[13]** sparrowwallet/sparrow, GitHub Issue #617. *In some cases Sparrow doesn’t create BIP47 notification transaction. This may result in loss of funds.* https://github.com/sparrowwallet/sparrow/issues/617
 
 *Cited in:* Section 3.1
 
-**[14]** sparrowwallet/sparrow, GitHub Issue \#1982. *Sending to a BIP47 payment code doesn’t require a notification transaction to be made.* [[https://github.com/sparrowwallet/sparrow/issues/1982](https://github.com/sparrowwallet/sparrow/issues/1982)](https://github.com/sparrowwallet/sparrow/issues/1982)
+**[14]** sparrowwallet/sparrow, GitHub Issue #1982. *Sending to a BIP47 payment code doesn’t require a notification transaction to be made.* https://github.com/sparrowwallet/sparrow/issues/1982
 
 *Cited in:* Section 3.1
