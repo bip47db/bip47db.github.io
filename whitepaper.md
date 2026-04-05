@@ -40,7 +40,7 @@ This seizure demonstrated the existential risk of relying on centralised infrast
 
 This problem is further compounded by wallet implementations that allow users to send to a BIP47 payment code without first broadcasting a notification transaction. This issue was first identified in Sparrow Wallet shortly after it introduced BIP47 support, where a user could pay directly to a payment code that had already connected *to them* (i.e. where the peer initiated the connection via a notification transaction) without requiring the user to send their own notification transaction in return. <sup>[13]</sup> That specific case was resolved shortly after Sparrow released PayNym support; however, the underlying issue persists in a related form. It remains possible to send to a BIP47 payment code in Sparrow without a notification transaction being created under certain circumstances. <sup>[14]</sup> While this saves the cost of an additional on-chain transaction, it means there is no outgoing notification transaction recorded on the blockchain for the wallet to discover during recovery. If the user subsequently restores their wallet from seed, there is no on-chain evidence that they ever sent payments to that peer’s payment code. The funds are not lost — they remain spendable by the recipient — but the sender’s transaction history becomes incomplete and the outgoing payment channel is invisible to the restored wallet. A decentralised on-chain directory of payment codes, as proposed by BIP47DB, would provide an additional recovery path in this scenario by allowing the wallet to resolve notification addresses to payment codes without depending on the existence of a corresponding outgoing notification transaction.
 
-Additionally, both Samourai/Ashigaru and Sparrow support the ability to "refund" a BIP47 payment back to the original sender without requiring a new notification transaction, since the sender’s payment code was already received via the incoming notification. This further illustrates that not all BIP47 payment flows create the on-chain notification trail that seed-only recovery depends upon.
+Additionally, both Samourai and Ashigaru support the ability to "refund" a BIP47 payment back to the original sender without requiring a new notification transaction, since the sender’s payment code was already received via the incoming notification. This further illustrates that not all BIP47 payment flows create the on-chain notification trail that seed-only recovery depends upon.
 
 ### 3.2 Single Point of Failure
 
@@ -70,9 +70,8 @@ Each BIP47DB inscription contains a single compressed binary blob with the follo
 
 **Header (40 bytes):**
 
-|                |          |                                                                                                                   |
-|----------------|----------|-------------------------------------------------------------------------------------------------------------------|
 | **Field**      | **Size** | **Description**                                                                                                   |
+|----------------|----------|-------------------------------------------------------------------------------------------------------------------|
 | Magic          | 2 bytes  | 0x47DB — compact format identifier                                                                                |
 | Format version | 1 byte   | Protocol version (currently 0x01)                                                                                 |
 | Record count   | 4 bytes  | Number of payment codes in this batch (big-endian uint32)                                                         |
