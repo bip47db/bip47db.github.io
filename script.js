@@ -12,9 +12,6 @@ async function init() {
     if (!res.ok) throw new Error('Failed to load whitepaper.md');
     const md = await res.text();
 
-    // Extract abstract (first paragraph after any heading)
-    const absMatch = md.match(/^(?:.*\n)*?(.+?)(?=\n\n## )/s);
-
     // Render markdown
     const html = marked.parse(md);
     document.getElementById('article').innerHTML = html;
@@ -25,7 +22,6 @@ async function init() {
       document.getElementById('abstract').innerHTML =
         '<strong>Abstract:</strong> ' + absMatch[1].trim();
       // Remove the abstract paragraph from the rendered article
-      // (it renders as the first <p> since it's plain text between comments)
       const firstP = document.querySelector('#article > p:first-child');
       if (firstP && firstP.textContent.startsWith('This document proposes')) {
         firstP.remove();
@@ -100,8 +96,6 @@ function addCopyButtons() {
 }
 
 function applyCodeStyling() {
-  // marked.js adds class="language-xxx" to <code> inside <pre>
-  // Apply the green accent to text/protocol blocks
   document.querySelectorAll('#article pre code').forEach(code => {
     if (code.className.includes('language-text')) {
       code.parentElement.classList.add('language-text');
