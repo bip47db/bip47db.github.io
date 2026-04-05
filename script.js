@@ -19,12 +19,17 @@ async function init() {
     const html = marked.parse(md);
     document.getElementById('article').innerHTML = html;
 
-    // Set abstract
-    const firstP = document.querySelector('#article > p');
-    if (firstP) {
+    // Extract abstract from <!-- abstract --> markers in the source markdown
+    const absMatch = md.match(/<!-- abstract -->\s*([\s\S]*?)\s*<!-- \/abstract -->/);
+    if (absMatch) {
       document.getElementById('abstract').innerHTML =
-        '<strong>Abstract:</strong> ' + firstP.textContent;
-      firstP.remove();
+        '<strong>Abstract:</strong> ' + absMatch[1].trim();
+      // Remove the abstract paragraph from the rendered article
+      // (it renders as the first <p> since it's plain text between comments)
+      const firstP = document.querySelector('#article > p:first-child');
+      if (firstP && firstP.textContent.startsWith('This document proposes')) {
+        firstP.remove();
+      }
     }
 
     // Build TOC from rendered headings
