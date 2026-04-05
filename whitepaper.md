@@ -1,3 +1,7 @@
+<!-- abstract -->
+This document proposes BIP47DB, an open protocol for inscribing BIP47 reusable payment codes onto the Bitcoin blockchain using Ordinals inscriptions with compressed binary encoding. The protocol creates a decentralised, censorship-resistant, and publicly verifiable directory of payment codes that eliminates single points of failure in the PayNym ecosystem. Anyone may write to the directory, and all entries are client-side verifiable against the secp256k1 curve. We describe the binary encoding format, the inscription structure, cost analysis, a comparison with the Runes protocol, indexer architecture, and integration paths for existing wallets including Ashigaru and Sparrow.
+<!-- /abstract -->
+
 ## 1. Introduction
 
 BIP47, *Reusable Payment Codes for Hierarchical Deterministic Wallets*, was proposed by Justus Ranvier in 2015. <sup>[1]</sup> It enables users to derive a unique, publicly shareable payment code from their HD wallet seed. Two parties who exchange payment codes can generate an effectively unlimited number of unique Bitcoin addresses between them, eliminating address reuse and preserving transactional privacy.
