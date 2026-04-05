@@ -2,8 +2,6 @@
 
 **A Decentralised On-Chain Directory for BIP47 Payment Codes**
 
-[Read the whitepaper →](https://bip47db.github.io)
-
 ---
 
 ## Overview
