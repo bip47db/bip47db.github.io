@@ -680,7 +680,7 @@ return results;
 }
 ```
 
-## Appendix C: Changelog
+## Appendix B: Changelog
 
 ### v1.1 — April 2026
 
@@ -698,7 +698,7 @@ return results;
 
 Initial publication for community review.
 
-## Appendix D: References
+## Appendix C: References
 
 **[1]** Ranvier, J. (2015). *BIP47: Reusable Payment Codes for Hierarchical Deterministic Wallets.* https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki
 
