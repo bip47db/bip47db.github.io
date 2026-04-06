@@ -111,20 +111,55 @@ The compressed blob is inscribed with the content-type application/x-bip47db to 
 
 ### 5.5 Canonical Deposit Address
 
-To provide a discovery mechanism that does not depend on Ordinals-specific indexing infrastructure, the protocol specifies a canonical, provably unspendable Bitcoin address to which all BIP47DB inscription reveal transactions SHOULD send their first output. This address is derived from a nothing-up-my-sleeve value:
+To provide a discovery mechanism that does not depend on Ordinals-specific indexing infrastructure, the protocol specifies a canonical, provably unspendable Bitcoin address to which all BIP47DB inscription reveal transactions SHOULD send their first output. This address is derived from a NUMS (Nothing Up My Sleeve) point using the following procedure:
+
+**Step 1: Hash-to-curve with increment-and-retry.**
 
 ```text
-Canonical BIP47DB deposit address derivation
-
-1. Compute a NUMS (Nothing Up My Sleeve) point:
-   H = SHA-256(SHA-256("BIP47DB/v1"))
-   Interpret H as an x-coordinate on secp256k1
-
-2. Construct a P2TR (taproot) address using H as
-   the internal key with no script path
-
-Because no one knows the discrete logarithm of H, the address is provably unspendable. Sats sent to this address are permanently locked.
+counter = 0
+loop:
+    if counter == 0:
+        preimage = "BIP47DB/v1"
+    else:
+        preimage = "BIP47DB/v1" || byte(counter)
+    x = SHA-256(SHA-256(preimage))
+    if x < p AND x³ + 7 is a quadratic residue mod p:
+        H = lift_x(x) with even y (per BIP-340 convention)
+        break
+    counter += 1
 ```
+
+For the string `"BIP47DB/v1"`, counter = 0 produces a valid x-coordinate on the first iteration:
+
+```text
+SHA-256(SHA-256("BIP47DB/v1")) =
+    ec6038c9b0beeb2b3a93ca441e74cf33b23914eb067cda740684dbd84600dec2
+```
+
+This value is less than the secp256k1 field prime *p*, and x³ + 7 (mod *p*) is a quadratic residue, so H is the point with this x-coordinate and even y-coordinate.
+
+**Step 2: Apply BIP-341 taptweak with no script path.**
+
+```text
+tweak   = tagged_hash("TapTweak", H.x)
+        = 77981f2a13da41675c5423fc302682fe1e9fdd9a012c3c61037746710b4106bc
+Q       = H + tweak · G
+Q.x     = 9a852377a652b26af6cca30b278dca55c83aadb1a51f21d509a2d69d09b00d0d
+```
+
+Where `tagged_hash` is the BIP-340 tagged hash function: `SHA-256(SHA-256(tag) || SHA-256(tag) || msg)`.
+
+**Step 3: Encode as bech32m P2TR address.**
+
+The canonical BIP47DB deposit address is:
+
+```text
+bc1pn2zjxaax22ex4akv5v9j0rw22hyr4td3550jr4gf5ttf6zdsp5xs99gx5z
+```
+
+Because no one knows the discrete logarithm of H, the output key Q is also unspendable. Sats sent to this address are permanently locked.
+
+Implementations MUST derive this exact address. Any deviation indicates a bug in the derivation code. The test vector above provides all intermediate values needed to diagnose implementation differences.
 
 This creates a single, deterministic address that any wallet or indexer can independently compute. Discovery then requires only a standard address history query — the most basic operation any Bitcoin infrastructure supports. Every transaction to this address is a BIP47DB batch. No Ordinals indexer, no MIME type filtering, and no full chain scan is needed.
 
