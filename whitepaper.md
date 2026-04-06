@@ -690,8 +690,6 @@ return results;
 
 **Segwit flag merge strategy (Section 15.3).** When the same payment code appears in multiple batches with different record flags, indexers SHOULD merge flags using bitwise OR. Real-world justification documented: BlueWallet implements BIP47 without setting the Segwit flag yet defaults to Segwit wallets; Ashigaru sends to Segwit-derived addresses regardless of the flag.
 
-**NUMS rationale (Section 5.5).** Added explanation of why the deposit address is deliberately unspendable rather than anyone-can-spend, to prevent chain analysis tainting and dust poisoning attacks.
-
 **Cost tables recalculated (Sections 6.3, 8, 9.3, 12.2, 17).** All costs recalculated with correct 81 bytes per record and 40 + 69 = 109 byte header/trailer overhead.
 
 ### v1.0 — April 2026
