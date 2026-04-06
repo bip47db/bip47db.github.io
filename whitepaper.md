@@ -60,7 +60,7 @@ BIP47DB is an open protocol for storing BIP47 payment codes on the Bitcoin block
 
 **Append-only:** Inscriptions are immutable once confirmed. New batches reference previous ones via a chain of inscription IDs, forming a verifiable append-only log.
 
-**Compressed binary encoding:** Payment codes are stored in their raw 80-byte binary form with a 1-byte per-record flags field (81 bytes per record), then batch-compressed with zlib to minimise on-chain footprint. Redundant fields (notification addresses) are not stored, as they are derivable from the payment code. PayNym nicknames and avatars are also omitted, as these are server-operator-assigned identifiers that directory operators can regenerate from the payment code data. The per-record flags field captures implementation-specific extensions such as Segwit support signalling.
+**Compressed binary encoding:** Payment codes are stored in their raw 80-byte binary form with a 1-byte per-record flags field (81 bytes per record), then batch-compressed with zlib to minimise on-chain footprint. Redundant fields (notification addresses) are not stored, as they are derivable from the payment code. PayNym nicknames and avatars are also omitted, as these are server-operator-assigned identifiers that directory operators can regenerate from the payment code data. The per-record flags field captures implementation-specific extensions such as Segwit support signalling. The publisher’s identity is recoverable from the ECDSA signature in the trailer, enabling publisher attribution and reputation filtering without consuming header space.
 
 ## 5. On-Chain Data Format
 
@@ -78,7 +78,7 @@ Each BIP47DB inscription contains a single compressed binary blob with the follo
 | Flags          | 1 byte   | Bit 0: 1 = v1 codes; Bit 1: 1 = v2 codes; Bits 2–7: reserved                                                      |
 | Prev txid      | 32 bytes | Raw txid of the previous batch’s reveal transaction (0x00...00 for first batch). Inscriptions MUST be at index 0. |
 
-*The publisher’s public key is not stored in the header. It is recoverable from the Schnorr signature in the trailer (see Section 5.3), saving 33 bytes per batch.*
+*The publisher’s public key is not stored in the header. It is recovered from the ECDSA signature and recovery flag in the trailer (see Section 5.3), saving 33 bytes per batch. ECDSA key recovery is a well-established technique used throughout the Bitcoin ecosystem (notably in Bitcoin’s message signing standard), and is possible because ECDSA does not include the public key in the signature hash, unlike BIP-340 Schnorr which uses key prefixing. The choice of ECDSA over BIP-340 for the batch signature is deliberate: it enables key recovery, has universal library support in all BIP47 wallet implementations, and the security tradeoff (loss of related-key attack protection from key prefixing) is acceptable for publisher attestation, since payment code validity rests on independent secp256k1 curve verification, not on the publisher’s identity.*
 
 ### 5.2 Body
 
@@ -93,15 +93,15 @@ The per-record flags byte addresses the Samourai/Ashigaru practice of using a cu
 
 ### 5.3 Trailer
 
-| **Field**     | **Size** | **Description**                                              |
-|---------------|----------|--------------------------------------------------------------|
-| Checksum      | 4 bytes  | First 4 bytes of SHA-256(header + body)                      |
-| Recovery flag | 1 byte   | Schnorr signature recovery byte for publisher key extraction |
-| Signature     | 64 bytes | Schnorr signature over SHA-256(header + body)                |
+| **Field**     | **Size** | **Description**                                                  |
+|---------------|----------|------------------------------------------------------------------|
+| Checksum      | 4 bytes  | First 4 bytes of SHA-256(header + body)                          |
+| Recovery flag | 1 byte   | ECDSA recovery parameter (v = 0 or 1) for public key extraction  |
+| Signature     | 64 bytes | ECDSA signature (r, s) over SHA-256(header + body)               |
 
 **Total trailer size: 69 bytes**
 
-The publisher’s public key is recovered from the Schnorr signature and recovery flag rather than being stored explicitly in the header. This saves 33 bytes per batch while still allowing clients to verify that a batch was published by a known entity and to filter by publisher reputation.
+The signature is a standard secp256k1 ECDSA signature over `SHA-256(header || body)`. The publisher’s compressed public key is recovered from the signature using the recovery flag (v), which disambiguates between the two candidate public keys that correspond to a given ECDSA signature. This is the same recovery technique used in Bitcoin’s `signmessage` / `verifymessage` RPC and in Ethereum’s `ecrecover`. The recovery procedure is implemented in all major secp256k1 libraries including libsecp256k1 (`secp256k1_ecdsa_recover`), tiny-secp256k1, and noble-secp256k1 (`recoverPublicKey`).
 
 ### 5.4 Compression
 
@@ -207,11 +207,11 @@ For a batch of 100 payment codes:
 | Header + trailer               | 40 + 69 = 109 bytes     |
 | Uncompressed total             | 8,209 bytes             |
 | Compressed (~45%)              | \~4,515 bytes           |
-| Envelope overhead (~6%)        | \~270 bytes             |
-| Total witness data             | \~4,750 bytes           |
-| Effective vBytes (witness ÷ 4) | \~1,188 vB              |
-| Cost at 5 sat/vB               | \~5,940 sats (\~\$3.92) |
-| Cost at 20 sat/vB              | \~23,760 sats (\~\$15.68) |
+| Envelope overhead (~6%)        | \~271 bytes             |
+| Total witness data             | \~4,786 bytes           |
+| Effective vBytes (witness ÷ 4) | \~1,197 vB              |
+| Cost at 5 sat/vB               | \~5,985 sats (\~\$3.95) |
+| Cost at 20 sat/vB              | \~23,940 sats (\~\$15.80) |
 
 *Costs calculated at \$66,000 USD per BTC.*
 
@@ -280,13 +280,13 @@ The following table summarises the cost of inscribing various batch sizes at dif
 
 | **Records** | **Raw (bytes)** | **On-chain** | **vBytes** | **@ 1 sat/B** | **@ 20 sat/vB** |
 |-------------|-----------------|--------------|------------|---------------|-----------------|
-| 100         | 8,150           | 4,750        | 1,188      | \$3.13        | \$15.68         |
-| 1,000       | 80,150          | 46,700       | 11,675     | \$30.82       | \$154.10        |
-| 5,000       | 400,150         | 233,100      | 58,275     | \$153.85      | \$769.23        |
-| 10,000      | 800,150         | 466,100      | 116,525    | \$307.63      | \$1,538.13      |
-| 17,500      | 1,400,150       | 815,700      | 203,925    | \$538.36      | \$2,691.80      |
+| 100         | 8,209           | 4,786        | 1,196      | \$3.16         | \$15.79          |
+| 1,000       | 81,109          | 47,287       | 11,822     | \$31.21        | \$156.05         |
+| 5,000       | 405,109         | 236,179      | 59,045     | \$155.88       | \$779.39         |
+| 10,000      | 810,109         | 472,294      | 118,074    | \$311.71       | \$1,558.58       |
+| 17,500      | 1,417,609       | 826,466      | 206,616    | \$545.47       | \$2,727.33       |
 
-At 1 sat per byte, the entire known PayNym database of approximately 17,500 codes could be inscribed for around \$538. Periodic delta updates of a few hundred new codes would cost just a few dollars each.
+At 1 sat per byte, the entire known PayNym database of approximately 17,500 codes could be inscribed for around \$545. Periodic delta updates of a few hundred new codes would cost just a few dollars each.
 
 ## 9. Comparison with the Runes Protocol
 
@@ -314,7 +314,7 @@ Alternatively, one could use one OP_RETURN per payment code, encoding each 80-by
 | Batching             | Not supported (1 record per tx)   | Thousands per inscription               |
 | Txns for 10K records | 10,000 transactions               | 1–3 transactions                        |
 | On-chain size (10K)  | ~2.5 MB (txn overhead)            | ~466 KB                                 |
-| Cost @ 1 sat/B (10K) | ~\$1,650 (no witness discount)    | ~\$308 (witness discount)               |
+| Cost @ 1 sat/B (10K) | ~\$1,650 (no witness discount)    | ~\$312 (witness discount)               |
 | Witness discount     | No (OP_RETURN is not witness)     | Yes (pay 1 vB per 4 witness bytes)      |
 | UTXO impact          | Clean (OP_RETURN is prunable)     | Clean (inscription is in witness)       |
 | Indexer model        | Replay all txns chronologically   | Decode self-contained batch             |
@@ -347,7 +347,7 @@ A critical property of BIP47DB is that every record is independently verifiable 
 
 These checks require no network access, no trusted third party, and only basic elliptic curve arithmetic available in any Bitcoin library. Libraries such as tiny-secp256k1 (a WebAssembly-based implementation that works in both browsers and Node.js) can perform these checks with a single function call. Invalid codes (corrupted data, malicious entries, or garbage) are silently discarded. This means anyone — a wallet developer, a directory operator, or an anonymous community member — can publish BIP47DB inscriptions, and the data is trustworthy solely by virtue of mathematical validation.
 
-Additionally, the batch signature (Schnorr, with the publisher’s key recoverable from the signature and recovery flag) allows clients to verify that a batch was published by a known entity, should they choose to filter by publisher reputation. However, this is optional — the data validity rests on secp256k1 verification, not publisher identity.
+Additionally, the batch signature (ECDSA, with the publisher’s key recoverable from the signature and recovery flag) allows clients to verify that a batch was published by a known entity, should they choose to filter by publisher reputation. However, this is optional — the data validity rests on secp256k1 verification, not publisher identity.
 
 ## 11. Indexer Architecture
 
@@ -382,8 +382,8 @@ e. Derive Base58Check payment code string
 f. Store in database
 5. Verify trailer:
 - Checksum: SHA-256(header + body)[:4]
-- Recover publisher key from signature + recovery flag
-- Verify Schnorr signature
+- Recover publisher public key from ECDSA signature + recovery flag
+- Verify ECDSA signature against recovered key
 6. Follow prev_txid chain to link batches
 ```
 
@@ -422,7 +422,7 @@ When a wallet creates a new BIP47 payment code, it could optionally inscribe it 
 
 Ashigaru Wallet, as the maintainer of the paynym.rs directory and the controller of the paynym.is domain, <sup>[4] [5]</sup> is ideally positioned to integrate BIP47DB:
 
-**Bulk inscription:** Ashigaru could inscribe its entire database of ~17,500 payment codes in a single batch for approximately \$538 at 1 sat/byte, creating a permanent on-chain backup of the directory it laboriously reconstructed from Samourai’s infrastructure.
+**Bulk inscription:** Ashigaru could inscribe its entire database of ~17,500 payment codes in a single batch for approximately \$545 at 1 sat/byte, creating a permanent on-chain backup of the directory it laboriously reconstructed from Samourai’s infrastructure.
 
 **Ongoing deltas:** As new PayNyms are claimed through the Ashigaru app, the server could batch new codes and inscribe periodic updates (weekly or monthly), costing just a few dollars per batch.
 
@@ -480,7 +480,7 @@ However, users should understand that publishing a payment code on-chain permane
 
 ### 15.2 Spam and Pollution
 
-Since anyone can publish a BIP47DB inscription, malicious actors could inscribe invalid or fabricated payment codes. The client-side validation described in Section 10 mitigates this: invalid public keys are rejected, and fabricated-but-valid keys will simply result in payment codes that no one controls. Indexers can further filter by publisher reputation (using the Schnorr signature in the trailer) and by cross-referencing with known notification transactions on-chain.
+Since anyone can publish a BIP47DB inscription, malicious actors could inscribe invalid or fabricated payment codes. The client-side validation described in Section 10 mitigates this: invalid public keys are rejected, and fabricated-but-valid keys will simply result in payment codes that no one controls. Indexers can further filter by publisher reputation (using the ECDSA signature in the trailer) and by cross-referencing with known notification transactions on-chain.
 
 ### 15.3 Replay and Duplication
 
@@ -502,7 +502,7 @@ The OR strategy is further justified by the practical reality of BIP47 Segwit su
 
 The seizure of Samourai Wallet’s infrastructure in April 2024 exposed a fundamental contradiction in the BIP47 ecosystem: a decentralised payment protocol dependent on a centralised directory. <sup>[6]</sup> The Ashigaru project’s remarkable effort to reconstruct the PayNym database demonstrated both the value of this data and the fragility of its custodianship. <sup>[4]</sup>
 
-BIP47DB resolves this contradiction by anchoring payment code data to the Bitcoin blockchain itself. At a cost of roughly \$310 for 10,000 records (at 1 sat/byte, \$66,000/BTC), this is not merely feasible — it is inexpensive enough that multiple independent parties could publish overlapping copies, creating a mesh of redundancy that no single seizure, server failure, or censorship action could disrupt.
+BIP47DB resolves this contradiction by anchoring payment code data to the Bitcoin blockchain itself. At a cost of roughly \$312 for 10,000 records (at 1 sat/byte, \$66,000/BTC), this is not merely feasible — it is inexpensive enough that multiple independent parties could publish overlapping copies, creating a mesh of redundancy that no single seizure, server failure, or censorship action could disrupt.
 
 The protocol is intentionally simple: compressed binary payment codes inscribed with a custom content-type, verifiable with basic elliptic curve arithmetic, and indexable by anyone running a full node. No new consensus rules, no sidechains, no tokens — just data on Bitcoin, available forever.
 
@@ -572,10 +572,15 @@ concat(code, new Uint8Array([recordFlags[i] || 0]))
 const body = concat(...records);
 // Trailer
 const payload = concat(header, body);
-const fullHash = await sha256(payload);
-const checksum = fullHash.slice(0, 4);
-const signature = new Uint8Array(64); // placeholder
-const uncompressed = concat(payload, checksum, signature);
+const msgHash = await sha256(payload);
+const checksum = msgHash.slice(0, 4);
+// ECDSA sign: produces { signature (64 bytes), recovery (0 or 1) }
+// Using noble-secp256k1 or equivalent:
+// import { sign } from '@noble/secp256k1';
+// const { r, s, recovery } = sign(msgHash, publisherPrivKey);
+const sig = new Uint8Array(64);      // placeholder: r (32) || s (32)
+const recoveryFlag = new Uint8Array([0]); // placeholder: v = 0 or 1
+const uncompressed = concat(payload, checksum, recoveryFlag, sig);
 return pako.deflate(uncompressed, { level: 9 });
 }
 ```
@@ -612,7 +617,16 @@ for (let i = 0; i < 4; i++) {
 if (checksum[i] !== expected[i])
 throw new Error('Checksum mismatch');
 }
-return { version, count, codes, prevTxid };
+// ECDSA key recovery and signature verification
+const recoveryFlag = raw[offset + 4];    // v = 0 or 1
+const signature = raw.slice(offset + 5, offset + 69); // r (32) || s (32)
+const msgHash = await sha256(payload);
+// Using noble-secp256k1 or equivalent:
+// import { recoverPublicKey, verify } from '@noble/secp256k1';
+// const publisherKey = recoverPublicKey(msgHash, signature, recoveryFlag);
+// if (!verify(signature, msgHash, publisherKey))
+//     throw new Error('Invalid publisher signature');
+return { version, count, codes, prevTxid, recoveryFlag, signature };
 }
 ```
 
