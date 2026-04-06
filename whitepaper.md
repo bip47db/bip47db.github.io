@@ -680,7 +680,25 @@ return results;
 }
 ```
 
-## Appendix B: References
+## Appendix C: Changelog
+
+### v1.1 — April 2026
+
+**Signature scheme specified (Sections 5.1, 5.3, 10, 11.2, A.2, A.3).** The batch signature is now explicitly specified as secp256k1 ECDSA with key recovery. The publisher's public key is recovered from the signature and recovery flag rather than stored in the header, keeping the header at 40 bytes. The choice of ECDSA over BIP-340 Schnorr is documented: ECDSA enables key recovery (which BIP-340's key prefixing prevents), has universal library support in all BIP47 wallet implementations, and the security tradeoff is acceptable for publisher attestation. The reference implementation (Appendix A.2, A.3) now includes the recovery flag byte in the trailer, shows the intended `@noble/secp256k1` signing and recovery flow, and returns all parsed fields including `flags`.
+
+**NUMS deposit address fully specified (Section 5.5).** The canonical deposit address derivation is now fully specified with: an increment-and-retry hash-to-curve algorithm with counter byte, even-y parity per BIP-340 convention, BIP-341 taptweak with no script path, and intermediate test vectors at every step. The canonical address is `bc1pn2zjxaax22ex4akv5v9j0rw22hyr4td3550jr4gf5ttf6zdsp5xs99gx5z`. Implementations MUST derive this exact address.
+
+**Segwit flag merge strategy (Section 15.3).** When the same payment code appears in multiple batches with different record flags, indexers SHOULD merge flags using bitwise OR. Real-world justification documented: BlueWallet implements BIP47 without setting the Segwit flag yet defaults to Segwit wallets; Ashigaru sends to Segwit-derived addresses regardless of the flag.
+
+**NUMS rationale (Section 5.5).** Added explanation of why the deposit address is deliberately unspendable rather than anyone-can-spend, to prevent chain analysis tainting and dust poisoning attacks.
+
+**Cost tables recalculated (Sections 6.3, 8, 9.3, 12.2, 17).** All costs recalculated with correct 81 bytes per record and 40 + 69 = 109 byte header/trailer overhead.
+
+### v1.0 — April 2026
+
+Initial publication for community review.
+
+## Appendix D: References
 
 **[1]** Ranvier, J. (2015). *BIP47: Reusable Payment Codes for Hierarchical Deterministic Wallets.* https://github.com/bitcoin/bips/blob/master/bip-0047.mediawiki
 
