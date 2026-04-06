@@ -562,7 +562,7 @@ const header = concat(
 MAGIC, // 2 bytes
 new Uint8Array([FORMAT_VERSION]), // 1 byte
 writeUint32BE(paymentCodes.length), // 4 bytes
-new Uint8Array([0x01]), // 1 byte flags
+new Uint8Array([0x01]), // 1 byte flags (bit 0 = v1 codes; set bit 1 for v2)
 prevTxid // 32 bytes
 );
 // Body: 81-byte records (80-byte code + 1-byte flags)
@@ -626,7 +626,7 @@ const msgHash = await sha256(payload);
 // const publisherKey = recoverPublicKey(msgHash, signature, recoveryFlag);
 // if (!verify(signature, msgHash, publisherKey))
 //     throw new Error('Invalid publisher signature');
-return { version, count, codes, prevTxid, recoveryFlag, signature };
+return { version, count, codes, flags, prevTxid, recoveryFlag, signature };
 }
 ```
 
