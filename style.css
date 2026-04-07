@@ -118,3 +118,19 @@ tr:nth-child(even) td { background: var(--bg-surface); }
   #content { margin-left: 0; padding-left: 20px; padding-right: 20px; }
   #content.expanded { margin-left: 0; }
 }
+/* ─── Mobile overflow fixes ─── */
+#article a {
+  word-break: break-all;
+}
+
+#article code {
+  word-break: break-all;
+}
+
+@media (max-width: 900px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
