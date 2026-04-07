@@ -12,17 +12,16 @@
 html { scroll-behavior: smooth; scroll-padding-top: calc(var(--header-h) + 16px); }
 body { font-family: 'IBM Plex Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.7; }
 
-/* ─── Top Header Bar (always visible, both mobile and desktop) ─── */
+/* ─── Header Bar (always visible) ─── */
 .site-nav {
+  display: flex;
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   background: var(--bg-surface); border-bottom: 1px solid var(--border);
-  padding: 0 16px; height: var(--header-h);
-  display: flex; align-items: center;
+  padding: 0 16px; height: var(--header-h); align-items: center;
 }
 .site-nav button {
   background: none; border: none; color: var(--text); font-size: 22px;
   cursor: pointer; padding: 4px 8px; line-height: 1;
-  display: flex; align-items: center;
 }
 .site-nav button:hover { color: var(--accent); }
 .site-nav .brand {
@@ -113,7 +112,9 @@ tr:nth-child(even) td { background: var(--bg-surface); }
 
 /* ─── Mobile ─── */
 @media (max-width: 900px) {
-  #toc { width: 260px; }
+  #toc { width: 260px; transform: translateX(-100%); }
+  #toc.open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.5); }
+  #toc.collapsed { transform: translateX(-100%); }
   #content { margin-left: 0; padding-left: 20px; padding-right: 20px; }
   #content.expanded { margin-left: 0; }
 }
