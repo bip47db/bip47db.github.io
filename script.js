@@ -11,19 +11,20 @@ function isMobile() {
 }
 
 function init() {
-  // Set up sidebar toggle
-  var toggleBtn = document.getElementById('toc-toggle');
   var toc = document.getElementById('toc');
   var content = document.getElementById('content');
+  var toggleBtn = document.getElementById('toc-toggle');
+  var siteNav = document.querySelector('.site-nav');
 
   if (toggleBtn) {
-    toggleBtn.addEventListener('click', function() {
+    toggleBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
       if (isMobile()) {
-        // Mobile: slide in/out as overlay
+        // Mobile: slide in as overlay, or close if already open
         toc.classList.toggle('open');
         toc.classList.remove('collapsed');
       } else {
-        // Desktop: collapse/expand with content reflow
+        // Desktop: collapse/expand sidebar with content reflow
         var isCollapsed = toc.classList.toggle('collapsed');
         content.classList.toggle('expanded', isCollapsed);
       }
@@ -33,7 +34,7 @@ function init() {
   // Close mobile sidebar when clicking outside
   document.addEventListener('click', function(e) {
     if (isMobile() && toc.classList.contains('open')) {
-      if (!toc.contains(e.target) && e.target !== toggleBtn) {
+      if (!toc.contains(e.target) && (!siteNav || !siteNav.contains(e.target))) {
         toc.classList.remove('open');
       }
     }
@@ -97,7 +98,6 @@ function buildTOC() {
     a.href = '#' + h.id;
     a.textContent = h.textContent;
     a.addEventListener('click', function() {
-      // Close sidebar on mobile after clicking a link
       if (isMobile()) {
         toc.classList.remove('open');
       }
