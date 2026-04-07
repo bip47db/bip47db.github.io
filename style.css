@@ -61,7 +61,7 @@ body { font-family: 'IBM Plex Sans', -apple-system, sans-serif; background: var(
 
 /* ─── Main Content ─── */
 #content {
-  margin-left: var(--sidebar-w); max-width: calc(var(--content-max) + 80px);
+  margin-left: var(--sidebar-w);
   padding: calc(var(--header-h) + 24px) 40px 120px;
   transition: margin-left 0.25s ease;
 }
