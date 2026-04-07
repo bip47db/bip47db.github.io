@@ -24,10 +24,10 @@
 </head>
 <body>
 
-<div class="mobile-header">
-  <button onclick="document.getElementById('toc').classList.toggle('open')" aria-label="Toggle contents">&#9776;</button>
-  <span>BIP47DB</span>
-</div>
+<nav class="site-nav">
+  <button id="toc-toggle" aria-label="Toggle contents">&#9776;</button>
+  <a href="#" class="brand" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">BIP47DB</a>
+</nav>
 
 <nav id="toc">
   <div class="toc-header">Contents</div>
