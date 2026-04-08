@@ -103,6 +103,8 @@ The per-record flags byte addresses the Samourai/Ashigaru practice of using a cu
 
 The signature is a standard secp256k1 ECDSA signature over `SHA-256(header || body)`. The publisher’s compressed public key is recovered from the signature using the recovery flag (v), which disambiguates between the two candidate public keys that correspond to a given ECDSA signature. This is the same recovery technique used in Bitcoin’s `signmessage` / `verifymessage` RPC and in Ethereum’s `ecrecover`. The recovery procedure is implemented in all major secp256k1 libraries including libsecp256k1 (`secp256k1_ecdsa_recover`), tiny-secp256k1, and noble-secp256k1 (`recoverPublicKey`).
 
+Publishers who hold a BIP47 payment code SHOULD sign batches using the private key corresponding to their notification address (the P2PKH address derived from the 0th public key of the payment code at path `m/47'/0'/0'`). This creates a cryptographic link between the batch publisher and the BIP47 ecosystem: anyone who knows the publisher’s payment code can verify the batch signature by recovering the public key and checking it against the notification address derived from that payment code. This provides a trust signal without requiring a separate identity system or public key infrastructure — the existing PayNym connection graph serves as the web of trust. For example, if Ashigaru signs a batch with the key corresponding to a well-known PayNym, any client that already follows that PayNym can verify the batch attribution automatically. This recommendation is a SHOULD, not a MUST: directory operators or community members publishing payment codes on behalf of others would sign with their own notification address key, not the keys of the payment codes being published.
+
 ### 5.4 Compression
 
 The entire payload (header + body + trailer) is compressed using zlib (deflate) at maximum compression level (9). Payment codes share structural redundancy — identical version bytes (0x01), common sign bytes (0x02/0x03), and zero-filled padding fields — which zlib exploits effectively, typically achieving 40–50% compression on batches of 1,000+ records.
@@ -681,6 +683,10 @@ return results;
 ```
 
 ## Appendix B: Changelog
+
+### v1.2 — April 2026
+
+**Notification address signing recommendation (Section 5.3).** Publishers who hold a BIP47 payment code SHOULD sign batches using the private key corresponding to their notification address. This creates a cryptographic link between publisher and the BIP47 ecosystem, allowing verification against known payment codes without a separate identity system.
 
 ### v1.1 — April 2026
 
