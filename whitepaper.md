@@ -492,6 +492,20 @@ When the same payment code appears in multiple batches with different record fla
 
 The OR strategy is further justified by the practical reality of BIP47 Segwit support across wallet implementations. BlueWallet, for example, implements BIP47 but does not set the Samourai Segwit feature flag, yet its default wallet type is Segwit — meaning users can receive to Segwit-derived addresses regardless of the flag’s absence. Ashigaru, unlike the original Samourai Wallet implementation, sends to Segwit-derived addresses regardless of whether the recipient’s payment code includes the Segwit flag, presumably for privacy reasons (Segwit transactions produce a more uniform on-chain footprint). In practice, the Segwit flag has become a vestige of an earlier era when not all wallets supported Segwit. Every major BIP47 implementation today either explicitly signals Segwit capability or implicitly supports it. A false negative (failing to flag Segwit when the wallet supports it) is therefore far more likely than a false positive, and OR-ing the flags corrects for this without introducing trust assumptions about which publisher is authoritative.
 
+### 15.4 Decompression Resource Limits
+
+Because batch payloads are zlib-compressed, indexers MUST protect against decompression bomb attacks where a small inscription expands to consume excessive memory or CPU. A malicious publisher could craft an inscription whose compressed payload is only a few kilobytes (and therefore cheap to inscribe) but expands to gigabytes when decompressed, crashing or hanging any indexer that processes it naively.
+
+Implementations MUST enforce both of the following limits:
+
+- **Maximum uncompressed size: 2 MB (2,097,152 bytes).** This accommodates approximately 25,000 records, which exceeds the entire known PayNym database (~17,500 codes) and is far larger than any realistic incremental batch (which would typically contain hundreds to a few thousand new codes between updates). Any legitimate batch fits comfortably within this limit; anything exceeding it should be treated as hostile and discarded.
+
+- **Maximum compression ratio: 50:1.** Legitimate BIP47DB batches achieve roughly 2:1 compression on payment code data due to the structural redundancy zlib exploits (identical version bytes, common sign byte prefixes, zero-filled padding). Anything above 10:1 is already highly unusual; the 50:1 ceiling provides ample margin for any conceivable optimisation while still blocking pathological zip bomb constructions, which typically achieve ratios of 1000:1 or higher.
+
+Implementations SHOULD use streaming decompression with chunk-based reading and abort decoding immediately when either limit is exceeded, rather than allocating a buffer of unknown size and attempting to decompress in one shot. All major zlib libraries support this pattern: in JavaScript, `pako.Inflate` provides incremental `push()`-based decompression; in Rust, `flate2::read::ZlibDecoder` allows reading into a bounded buffer; in Go, `compress/zlib` returns a `Reader` that can be combined with `io.LimitReader`.
+
+A batch that exceeds either limit MUST be discarded entirely and not partially indexed. The publisher's signature, regardless of validity, does not exempt a batch from these checks — the limits apply to every payload before any cryptographic verification is performed.
+
 ## 16. Future Work
 
 **BIP47 v3/v4 support:** Future payment code versions with different byte layouts would require a new flags bit and potentially different record sizes. The format version field in the header accommodates this.
@@ -590,8 +604,26 @@ return pako.deflate(uncompressed, { level: 9 });
 ### A.3 Decoding a BIP47DB Batch
 
 ```javascript
+// Resource limits to prevent decompression bomb attacks
+const MAX_UNCOMPRESSED = 2 * 1024 * 1024; // 2 MB
+const MAX_RATIO = 50;
+
 async function decodeBatch(compressed, ecc) {
-const raw = pako.inflate(compressed);
+// Enforce maximum compression ratio before decompressing
+if (compressed.length * MAX_RATIO < compressed.length) {
+throw new Error('Compressed input too large');
+}
+// Streaming decompression with size limit (using pako.Inflate)
+const inflator = new pako.Inflate();
+inflator.push(compressed, true);
+if (inflator.err) throw new Error('Decompression failed: ' + inflator.msg);
+const raw = inflator.result;
+if (raw.length > MAX_UNCOMPRESSED) {
+throw new Error('Uncompressed payload exceeds 2 MB limit');
+}
+if (raw.length / compressed.length > MAX_RATIO) {
+throw new Error('Compression ratio exceeds 50:1 limit');
+}
 // Verify magic
 if (raw[0] !== 0x47 || raw[1] !== 0xDB)
 throw new Error('Invalid magic');
@@ -683,6 +715,10 @@ return results;
 ```
 
 ## Appendix B: Changelog
+
+### v1.3 — April 2026
+
+**Decompression resource limits (Section 15.4).** Added explicit limits to protect indexers against decompression bomb attacks: maximum uncompressed payload size of 2 MB and maximum compression ratio of 50:1. Reference decoder updated to enforce these limits via streaming decompression with early termination.
 
 ### v1.2 — April 2026
 
