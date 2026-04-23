@@ -15,7 +15,7 @@ The protocol was motivated by the seizure of Samourai Wallet's infrastructure in
 - **Permissionless** — anyone can publish payment codes to the directory
 - **Client-side verifiable** — every entry is validated against the secp256k1 curve
 - **Censorship resistant** — data lives on the Bitcoin blockchain permanently
-- **Cost effective** — ~$308 for 10,000 records at 1 sat/byte ($66K/BTC)
+- **Cost effective** — ~$156 for a 5,000 record batch at 1 sat/byte ($66K/BTC)
 - **Dual discovery** — MIME type filtering + canonical provably-unspendable deposit address
 
 ## Repository Structure
