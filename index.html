@@ -1,68 +1,245 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BIP47DB: A Decentralised On-Chain Directory for BIP47 Payment Codes</title>
-<meta name="description" content="BIP47DB whitepaper — an open protocol for inscribing BIP47 reusable payment codes onto the Bitcoin blockchain.">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="icon" type="image/png" sizes="192x192" href="192x192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="512x512.png">
-<link rel="apple-touch-icon" sizes="192x192" href="192x192.png">
-<meta property="og:title" content="BIP47DB: A Decentralised On-Chain Directory for BIP47 Payment Codes">
-<meta property="og:description" content="An open protocol for inscribing BIP47 reusable payment codes onto the Bitcoin blockchain using Ordinals inscriptions. Censorship-resistant, client-side verifiable, permissionless.">
-<meta property="og:image" content="https://bip47db.github.io/og-image.png">
-<meta property="og:type" content="article">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="BIP47DB Whitepaper">
-<meta name="twitter:description" content="A decentralised on-chain directory for BIP47 payment codes.">
-<meta name="twitter:image" content="https://bip47db.github.io/og-image.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIP47DB — Decentralised On-Chain Directory for BIP47 Payment Codes</title>
+  <meta name="description" content="An open protocol for inscribing BIP47 reusable payment codes onto the Bitcoin blockchain. Censorship-resistant, client-side verifiable, permissionless.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117; --bg-surface: #161b22; --bg-elevated: #1c2128;
+      --border: #30363d; --border-subtle: #21262d;
+      --text: #e6edf3; --text-muted: #8b949e; --text-subtle: #6e7681;
+      --accent: #f7931a; --accent-dim: #f7931a22; --accent-hover: #ffab40;
+      --link: #58a6ff; --green: #3fb950;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .container {
+      max-width: 640px; width: 100%; text-align: center;
+    }
+
+    /* Logo */
+    .logo {
+      width: 80px; height: 80px; margin: 0 auto 32px;
+    }
+
+    /* Title */
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 48px; font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+
+    /* Tagline */
+    .tagline {
+      font-size: 18px; color: var(--text-muted);
+      line-height: 1.6; margin-bottom: 40px;
+    }
+
+    /* Action buttons */
+    .actions {
+      display: flex; gap: 16px;
+      justify-content: center; flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+    .actions a {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 14px 32px; border-radius: 8px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600; font-size: 16px;
+      text-decoration: none; transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    /* Primary = orange-outlined, fills orange on hover. Matches the
+       "Contributions welcome" button on the whitepaper site. */
+    .btn-primary {
+      background: var(--bg-elevated); color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover {
+      background: var(--accent); color: #fff;
+    }
+    /* Secondary = muted fill, accent text on hover. */
+    .btn-secondary {
+      background: var(--bg-elevated); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); color: var(--accent); }
+
+    /* Deposit addresses — centre aligned, hyperlinked, four-char alternating colour */
+    .deposits {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .deposits h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px; font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 20px;
+    }
+    .deposit-row {
+      margin-bottom: 16px;
+    }
+    .deposit-row:last-of-type { margin-bottom: 0; }
+    .deposit-label {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px; font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .deposit-addr {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      word-break: break-all;
+      line-height: 1.6;
+      text-decoration: none;
+      display: inline-block;
+      max-width: 100%;
+    }
+    /* Alternating four-character chunks. Every other .seg gets the muted
+       grey, creating a subtle rhythm that improves scannability without
+       adding colour noise. Hover lightens both for affordance. */
+    .deposit-addr .seg { color: var(--text); transition: color 0.15s; }
+    .deposit-addr .seg.alt { color: var(--text-muted); }
+    .deposit-addr:hover .seg { color: #fff; }
+    .deposit-addr:hover .seg.alt { color: #b8c0c8; }
+
+    .deposit-note {
+      font-size: 13px;
+      color: var(--text-subtle);
+      margin-top: 20px;
+      line-height: 1.55;
+    }
+
+    /* Footer — single GitHub icon link */
+    .footer {
+      display: flex; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .footer a {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--text-subtle);
+      transition: color 0.15s;
+      padding: 8px;
+    }
+    .footer a:hover { color: var(--accent); }
+    .footer svg { width: 24px; height: 24px; }
+
+    @media (max-width: 500px) {
+      h1 { font-size: 36px; }
+      .tagline { font-size: 16px; }
+      .actions a { width: 100%; justify-content: center; }
+      .deposit-addr { font-size: 12px; }
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
 
-<nav class="site-nav">
-  <button id="toc-toggle" aria-label="Toggle contents">&#9776;</button>
-  <a href="/" class="brand" onclick="window.scrollTo({top:0,behavior:'smooth'});history.pushState('','','/');return false;">BIP47DB</a>
-  <div class="site-nav-links">
-    <a href="/app" class="nav-link">App</a>
-    <a href="/paper" class="nav-link nav-link-active">Protocol</a>
-    <a href="/docs" class="nav-link">Docs</a>
-  </div>
-</nav>
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="80" height="80">
+        <defs>
+          <linearGradient id="dbBody" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1c2128"/>
+            <stop offset="100%" stop-color="#0d1117"/>
+          </linearGradient>
+          <linearGradient id="dbRim" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f7931a"/>
+            <stop offset="100%" stop-color="#e07800"/>
+          </linearGradient>
+        </defs>
+        <path d="M10 18 v28 c0 6 9.4 10 22 10 s22-4 22-10 V18" fill="url(#dbBody)" stroke="#30363d" stroke-width="1.5"/>
+        <ellipse cx="32" cy="46" rx="22" ry="10" fill="url(#dbBody)" stroke="#30363d" stroke-width="1.5"/>
+        <path d="M10 32 c0 6 9.4 10 22 10 s22-4 22-10" fill="none" stroke="#30363d" stroke-width="1" opacity="0.6"/>
+        <ellipse cx="32" cy="18" rx="22" ry="10" fill="url(#dbBody)" stroke="url(#dbRim)" stroke-width="2"/>
+        <ellipse cx="32" cy="18" rx="16" ry="6.5" fill="none" stroke="#f7931a" stroke-width="0.5" opacity="0.3"/>
+        <text x="32" y="50" text-anchor="middle" font-family="'SF Mono','Menlo','Consolas',monospace" font-size="22" font-weight="700" fill="#f7931a" letter-spacing="-1">47</text>
+      </svg>
+    </div>
 
-<nav id="toc">
-  <div class="toc-header">Contents</div>
-  <ul id="toc-list">
-    <li class="toc-loading">Loading...</li>
-  </ul>
-</nav>
-
-<main id="content">
-  <header class="site-header">
     <h1>BIP47DB</h1>
-    <div class="subtitle">A Decentralised On-Chain Directory for BIP47 Payment Codes</div>
-    <div class="meta">
-      <span class="badge badge-draft">DRAFT</span>
-      <span class="badge badge-version">v1.4 &#8212; April 2026</span>
-      <a href="https://github.com/bip47db/bip47db.github.io" class="btn-contribute">
+
+    <p class="tagline">
+      An open protocol for inscribing BIP47 reusable payment codes onto the Bitcoin blockchain.
+      Censorship-resistant. Client-side verifiable. Permissionless.
+    </p>
+
+    <div class="actions">
+      <a href="/app" class="btn-primary">Launch App</a>
+      <a href="/paper" class="btn-secondary">Read Protocol</a>
+    </div>
+
+    <div class="deposits">
+      <h2>Canonical deposit addresses</h2>
+      <div class="deposit-row">
+        <div class="deposit-label">Mainnet</div>
+        <a id="mainnetAddr" class="deposit-addr"
+           href="https://mempool.space/address/bc1pn2zjxaax22ex4akv5v9j0rw22hyr4td3550jr4gf5ttf6zdsp5xs99gx5z"
+           target="_blank" rel="noopener"></a>
+      </div>
+      <div class="deposit-row">
+        <div class="deposit-label">Testnet4</div>
+        <a id="testnet4Addr" class="deposit-addr"
+           href="https://mempool.space/testnet4/address/tb1pn2zjxaax22ex4akv5v9j0rw22hyr4td3550jr4gf5ttf6zdsp5xsjd7fwd"
+           target="_blank" rel="noopener"></a>
+      </div>
+      <div class="deposit-note">
+        All BIP47DB inscriptions are sent to these NUMS addresses derived from
+        <code style="font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg);padding:2px 5px;border-radius:3px;color:var(--link)">SHA-256(SHA-256("BIP47DB/v1"))</code>.
+        Anyone can verify these addresses independently.
+      </div>
+    </div>
+
+    <div class="footer">
+      <a href="https://github.com/bip47db" target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        Contributions welcome
       </a>
     </div>
-    <div class="abstract" id="abstract">
-      <strong>Abstract:</strong> Loading...
-    </div>
-  </header>
-  <article id="article">
-    <p class="loading-msg">Loading whitepaper content...</p>
-  </article>
-</main>
 
-<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
-<script src="script.js"></script>
+  </div>
+
+  <script>
+    // Render a Bitcoin address with every four-character chunk alternating
+    // between --text and --text-muted for readability. Runs at load so the
+    // hrefs remain the source of truth; the addresses are extracted from
+    // the href for the chunked display.
+    (function renderAddresses() {
+      function render(el) {
+        if (!el) return;
+        // Extract the address: everything after the last "/" in the href.
+        const addr = el.href.split('/').pop();
+        const parts = [];
+        for (let i = 0; i < addr.length; i += 4) {
+          const cls = (i / 4) % 2 === 0 ? 'seg' : 'seg alt';
+          parts.push(`<span class="${cls}">${addr.slice(i, i + 4)}</span>`);
+        }
+        el.innerHTML = parts.join('');
+      }
+      render(document.getElementById('mainnetAddr'));
+      render(document.getElementById('testnet4Addr'));
+    })();
+  </script>
 </body>
 </html>
