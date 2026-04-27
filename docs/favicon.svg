@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><metadata><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rdf:Description><dc:creator>RealFaviconGenerator</dc:creator><dc:source>https://realfavicongenerator.net</dc:source></rdf:Description></rdf:RDF></metadata><defs>
+    <linearGradient id="dbBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1c2128"></stop>
+      <stop offset="100%" stop-color="#0d1117"></stop>
+    </linearGradient>
+    <linearGradient id="dbRim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7931a"></stop>
+      <stop offset="100%" stop-color="#e07800"></stop>
+    </linearGradient>
+  </defs><path d="M10 18 v28 c0 6 9.4 10 22 10 s22-4 22-10 V18" fill="url(#dbBody)" stroke="#30363d" stroke-width="1.5"></path><ellipse cx="32" cy="46" rx="22" ry="10" fill="url(#dbBody)" stroke="#30363d" stroke-width="1.5"></ellipse><path d="M10 32 c0 6 9.4 10 22 10 s22-4 22-10" fill="none" stroke="#30363d" stroke-width="1" opacity="0.6"></path><ellipse cx="32" cy="18" rx="22" ry="10" fill="url(#dbBody)" stroke="url(#dbRim)" stroke-width="2"></ellipse><ellipse cx="32" cy="18" rx="16" ry="6.5" fill="none" stroke="#f7931a" stroke-width="0.5" opacity="0.3"></ellipse><text x="32" y="50" text-anchor="middle" font-family="'SF Mono','Menlo','Consolas',monospace" font-size="22" font-weight="700" fill="#f7931a" letter-spacing="-1">47</text></svg>
