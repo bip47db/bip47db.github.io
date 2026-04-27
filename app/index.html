@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIP47DB Publisher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117; --bg-surface: #161b22; --bg-elevated: #1c2128;
+      --bg-code: #0d1117; --bg-tech: #0f1a14;
+      --border: #30363d; --border-subtle: #21262d; --border-tech: #1f4a2e;
+      --text: #e6edf3; --text-muted: #8b949e; --text-subtle: #6e7681;
+      --accent: #f7931a; --accent-dim: #f7931a22; --accent-hover: #ffab40;
+      --link: #58a6ff; --link-hover: #79c0ff;
+      --green: #3fb950; --red: #f85149; --yellow: #d29922;
+      --header-h: 48px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'IBM Plex Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.65; min-height: 100vh; }
+
+    /* ── Nav ── */
+    .site-nav { display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: var(--header-h); align-items: center; }
+    .site-nav .brand { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--accent); text-decoration: none; }
+    .site-nav .brand:hover { color: var(--accent-hover); }
+    .site-nav .right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
+
+    #app { max-width: 1200px; margin: 0 auto; padding: calc(var(--header-h) + 32px) 40px 80px; }
+
+    /* ── Page header ── */
+    .page-header { margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--border); text-align: center; }
+    .page-header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; margin-bottom: 6px; }
+    .page-header .subtitle { font-size: 16px; color: var(--text-muted); }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 2px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .tab { background: none; color: var(--text-muted); border: none; padding: 12px 28px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+    .tab:hover { color: var(--text); background: none; }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: none; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Cards ── */
+    .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 20px; }
+    .step-label { font-family: 'Space Grotesk', sans-serif; color: var(--accent); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+
+    /* ── Forms ── */
+    label { display: block; margin-top: 14px; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: var(--text); font-family: 'Space Grotesk', sans-serif; }
+    input, textarea { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-code); color: var(--text); box-sizing: border-box; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.5; transition: border-color 0.15s; }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    input::placeholder, textarea::placeholder { color: var(--text-subtle); }
+    textarea { resize: vertical; }
+
+    /* ── Buttons ── */
+    button { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.3px; width: 100%; margin-top: 14px; transition: background 0.15s; }
+    button:hover:not(:disabled) { background: var(--accent-hover); color: #fff; }
+    button:disabled { background: var(--border); color: var(--text-subtle); cursor: not-allowed; }
+    .btn-secondary { background: var(--bg-elevated); color: var(--text); border: 1px solid var(--border); width: auto; margin: 0; padding: 8px 16px; font-size: 13px; }
+    .btn-secondary:hover:not(:disabled) { background: var(--border); color: var(--accent); }
+    .btn-danger { background: transparent; color: var(--red); border: 1px solid var(--red); width: auto; margin: 0; padding: 8px 16px; font-size: 13px; }
+    .btn-danger:hover:not(:disabled) { background: var(--red); color: #fff; }
+    .btn-confirm { background: var(--green); }
+    .btn-confirm:hover:not(:disabled) { background: #56d364; color: #fff; }
+
+    #psbtOutput { height: 120px; color: var(--green); background: var(--bg-code); font-size: 13px; border-left: 3px solid var(--green); }
+    #msgToSign { height: 60px; color: var(--accent); background: var(--bg-code); font-size: 14px; font-weight: 500; letter-spacing: 0.5px; resize: none; border-left: 3px solid var(--accent); }
+
+    /* ── Notes ── */
+    .note { font-size: 14px; color: var(--text-muted); background: var(--bg-code); padding: 12px 16px; border-radius: 6px; border-left: 3px solid var(--accent); margin-top: 14px; line-height: 1.65; }
+    .note code { font-family: 'JetBrains Mono', monospace; background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #a5d6ff; word-break: break-all; border: 1px solid var(--border-subtle); }
+    .note strong { color: var(--text); font-weight: 600; }
+    .note.note-warn { border-left-color: var(--yellow); }
+    .note.note-success { border-left-color: var(--green); }
+
+    /* ── Network indicator ── */
+    .net-banner { text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 6px; margin-bottom: 20px; border-radius: 6px; }
+    .net-banner.testnet4 { background: #78350f33; color: var(--yellow); border: 1px solid #78350f; }
+    .net-banner.mainnet { background: #14532d33; color: var(--green); border: 1px solid var(--border-tech); }
+
+    /* ── Batch list ── */
+    .batch { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+    .batch-header { padding: 14px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 12px; transition: background 0.15s; }
+    .batch-header:hover { background: var(--bg-elevated); }
+    .batch-meta { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-muted); flex: 1; min-width: 0; line-height: 1.6; }
+    .batch-meta strong { color: var(--text); font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .batch-meta .txid { word-break: break-all; color: var(--link); }
+    .batch-badges { display: flex; gap: 6px; flex-shrink: 0; }
+    .batch-status { font-family: 'Space Grotesk', sans-serif; font-size: 11px; padding: 4px 10px; border-radius: 4px; font-weight: 600; letter-spacing: 0.5px; }
+    .status-valid { background: #14532d33; color: var(--green); border: 1px solid var(--border-tech); }
+    .status-verified { background: #1e1b4b33; color: #818cf8; border: 1px solid #312e81; }
+    .status-invalid { background: #7f1d1d33; color: var(--red); border: 1px solid #7f1d1d; }
+    .status-warn { background: #78350f33; color: var(--yellow); border: 1px solid #78350f; }
+
+    .batch-body { display: none; padding: 20px 24px; border-top: 1px solid var(--border-subtle); background: var(--bg); }
+    .batch-body.open { display: block; }
+
+    .subtabs { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 1px solid var(--border-subtle); }
+    .subtab { background: none; color: var(--text-muted); border: none; padding: 7px 14px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; border-bottom: 2px solid transparent; margin: 0; margin-bottom: -1px; width: auto; letter-spacing: 0.3px; }
+    .subtab:hover { color: var(--text); background: none; }
+    .subtab.active { color: var(--accent); border-bottom-color: var(--accent); background: none; }
+    .subpanel { display: none; }
+    .subpanel.active { display: block; }
+
+    .code-list { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-muted); max-height: 400px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .code-list::-webkit-scrollbar { width: 6px; }
+    .code-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .code-list .row { padding: 7px 0; border-bottom: 1px solid var(--border-subtle); word-break: break-all; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .code-list .row:last-child { border-bottom: none; }
+    .code-list .pm { flex: 1; color: var(--text); }
+    .code-list .badge-sw, .code-list .badge-pub { font-family: 'Space Grotesk', sans-serif; font-size: 10px; padding: 2px 8px; border-radius: 4px; flex-shrink: 0; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+    .code-list .badge-sw { color: var(--yellow); background: #78350f33; border: 1px solid #78350f; }
+    .code-list .badge-pub { color: var(--green); background: #14532d33; border: 1px solid var(--border-tech); }
+
+    .meta-table { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-muted); width: 100%; border-collapse: collapse; }
+    .meta-table td { padding: 8px 10px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+    .meta-table tr:last-child td { border-bottom: none; }
+    .meta-table td:first-child { color: var(--text); width: 170px; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .meta-table td:last-child { word-break: break-all; color: #a5d6ff; }
+    .meta-table em { color: var(--yellow); font-style: normal; font-size: 12px; }
+
+    .hex-dump { font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; max-height: 400px; overflow-y: auto; background: var(--bg-code); padding: 14px 16px; border-radius: 6px; border: 1px solid var(--border); scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .hex-section { margin-bottom: 14px; }
+    .hex-section:last-child { margin-bottom: 0; }
+    .hex-section-label { font-family: 'Space Grotesk', sans-serif; color: var(--accent); font-weight: 600; font-size: 11px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; cursor: default; }
+    .hex-header { color: var(--link); }
+    .hex-body { color: var(--green); }
+    .hex-trailer { color: #f472b6; }
+
+    .empty, .loading { text-align: center; padding: 40px 20px; color: var(--text-subtle); font-style: italic; }
+    .loading { color: var(--accent); }
+
+    .stat-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--border-subtle); font-family: 'Space Grotesk', sans-serif; font-size: 13px; color: var(--text-muted); }
+    .stat-row span { text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; font-size: 12px; }
+    .stat-row strong { color: var(--accent); font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 500; text-transform: none; margin-left: 4px; }
+
+    .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+    .btn-row button { width: auto; margin: 0; flex: 1; }
+    .btn-row .btn-secondary, .btn-row .btn-danger { flex: 0 0 auto; }
+
+    .search-row { display: flex; gap: 10px; margin-top: 6px; }
+    .search-row input { flex: 1; }
+    .search-row button { width: auto; margin: 0; padding: 10px 18px; }
+
+    .search-result { margin-top: 14px; padding: 14px 16px; background: var(--bg-code); border-radius: 6px; border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 13px; word-break: break-all; color: var(--text-muted); }
+    .search-result strong { color: var(--text); }
+
+    .dedup-info { font-size: 13px; margin-top: 10px; font-family: 'JetBrains Mono', monospace; }
+    .dedup-info .removed { color: var(--yellow); }
+    .dedup-info .kept { color: var(--green); }
+
+    .inline-group { display: flex; gap: 10px; align-items: stretch; }
+    .inline-group > input, .inline-group > textarea { flex: 1; }
+    .inline-group > button { margin: 0; width: auto; padding: 0 16px; align-self: stretch; }
+
+    a { color: var(--link); text-decoration: none; }
+    a:hover { color: var(--link-hover); text-decoration: underline; }
+
+    #importFileInput { display: none; }
+
+    .copy-toast {
+      position: fixed; top: 20px; right: 20px; z-index: 999;
+      background: var(--green); color: #fff;
+      font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px;
+      padding: 10px 20px; border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      animation: toastIn 0.2s ease, toastOut 0.3s ease 1.2s forwards;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
+
+    .net-switch { display: flex; gap: 2px; background: var(--bg); border-radius: 6px; padding: 2px; border: 1px solid var(--border); }
+    .site-nav .net-switch button { background: transparent; border: none; color: var(--text-subtle); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; padding: 4px 14px; border-radius: 4px; cursor: pointer; transition: all 0.15s; margin: 0; width: auto; letter-spacing: 0.3px; }
+    .site-nav .net-switch button:hover { color: var(--text); background: transparent; }
+    .site-nav .net-switch button:hover:not(:disabled) { background: var(--bg-elevated); }
+    .site-nav .net-switch button.net-active-testnet { background: var(--yellow); color: #000; }
+    .site-nav .net-switch button.net-active-testnet:hover { background: var(--yellow); }
+    .site-nav .net-switch button.net-active-mainnet { background: var(--green); color: #000; }
+    .site-nav .net-switch button.net-active-mainnet:hover { background: var(--green); }
+    .net-banner { text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 6px; margin-bottom: 20px; border-radius: 6px; }
+    .net-banner.net-testnet4 { background: #78350f33; color: var(--yellow); border: 1px solid #78350f; }
+    .net-banner.net-mainnet { background: #14532d33; color: var(--green); border: 1px solid var(--border-tech); }
+
+    @media (max-width: 700px) {
+      #app { padding-left: 16px; padding-right: 16px; }
+      .page-header h1 { font-size: 26px; }
+      .meta-table td:first-child { width: 130px; }
+      .batch-header { flex-direction: column; align-items: flex-start; }
+      .batch-badges { margin-top: 8px; }
+      .tab { padding: 10px 16px; font-size: 14px; }
+      /* Center the Start from / Limit param blocks so they don't flush-left
+         on a narrow wrap, and center-align the sync stats row. */
+      .fetch-param { flex: 1 1 100%; justify-content: center; }
+      .stat-row { justify-content: center; gap: 16px; }
+      .stat-row span { flex: 1 1 40%; text-align: center; }
+    }
+  </style>
+  <script type="module" crossorigin src="/app/assets/index-Bbb6Zcrw.js"></script>
+</head>
+<body>
+  <nav class="site-nav">
+    <a class="brand" href="/">BIP47DB</a>
+    <div class="right">
+      <div class="net-switch">
+        <button id="netMainnet" class="net-active-mainnet">Mainnet</button>
+        <button id="netTestnet">Testnet4</button>
+      </div>
+    </div>
+  </nav>
+
+  <div id="app">
+    <div id="netBanner" class="net-banner net-testnet4" style="display:none">Testnet4</div>
+    <header class="page-header">
+      <h1>BIP47DB Publisher</h1>
+      <div class="subtitle">Publish BIP47 payment codes to the Bitcoin blockchain via Ordinals inscriptions. All operations run client-side.</div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="inscribe">INSCRIBE</button>
+      <button class="tab" data-tab="browse">BROWSE</button>
+    </div>
+
+    <!-- INSCRIBE -->
+    <div class="tab-panel active" id="tab-inscribe">
+      <div class="card">
+        <div class="step-label">Step 1 · Payment codes to inscribe</div>
+        <label>Payment codes (one per line, or paste JSON from PayNym.rs API)</label>
+        <div style="position:relative">
+          <div id="lineNumbers" style="position:absolute;left:0;top:0;bottom:0;width:48px;padding:10px 6px 10px 0;font-family:'JetBrains Mono',monospace;font-size:14px;line-height:1.5;color:var(--text-subtle);text-align:right;user-select:none;pointer-events:none;overflow:hidden;border-right:1px solid var(--border-subtle);background:var(--bg-surface);border-radius:6px 0 0 6px;z-index:1;white-space:pre"></div>
+          <textarea id="inputCodes" placeholder="PM8T..." wrap="off" style="height:160px;padding-left:58px;line-height:1.5;white-space:pre;overflow-x:auto"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:10px;align-items:stretch;flex-wrap:wrap">
+          <button id="btnFetchNyms" class="btn-secondary" style="flex:1;min-width:140px">Fetch from PayNym.rs</button>
+          <button id="btnPasteJson" class="btn-secondary" style="flex:1;min-width:140px">Paste JSON manually</button>
+          <div class="fetch-param" style="display:flex;align-items:center;gap:6px">
+            <label style="margin:0;white-space:nowrap;font-size:12px">Start from</label>
+            <input type="number" id="nymStart" value="1" min="1" style="width:80px;padding:6px 8px;font-size:13px" />
+          </div>
+          <div class="fetch-param" style="display:flex;align-items:center;gap:6px">
+            <label style="margin:0;white-space:nowrap;font-size:12px">Limit</label>
+            <input type="number" id="nymLimit" value="200" min="1" max="5000" style="width:80px;padding:6px 8px;font-size:13px" />
+          </div>
+          <button id="btnDedup" class="btn-secondary" style="flex:1;min-width:140px">Prepare batch</button>
+        </div>
+        <div id="dedupResult" class="dedup-info"></div>
+        <div id="jsonPasteArea" style="display:none;margin-top:10px">
+          <label>Paste JSON from <a id="paynymApiLink" href="https://paynym.rs/api/v1/nyms?page=1&limit=200" target="_blank" style="color:var(--link)">paynym.rs/api/v1/nyms</a></label>
+          <textarea id="jsonInput" placeholder="Open the link above, copy the full response, and paste here" style="height:100px"></textarea>
+          <button id="btnParseJson" class="btn-secondary" style="margin-top:6px;width:100%">Parse JSON and add codes</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="step-label">Step 2 · Your publisher identity</div>
+        <label>Your BIP47 payment code (PM8T...)</label>
+        <input type="text" id="publisherPM" placeholder="PM8T..." />
+        <div id="pubInfo" class="note" style="display:none;"></div>
+      </div>
+      <div class="card">
+        <div class="step-label">Step 3 · Funding UTXO</div>
+        <div class="note">Provide a UTXO you control with Sparrow Wallet. You'll sign the commit PSBT in Step 6.</div>
+        <label>UTXO (TXID:VOUT)</label>
+        <div class="inline-group"><input type="text" id="utxoRef" placeholder="txid:0" autocomplete="off"><button id="btnFetch" class="btn-secondary">Fetch</button></div>
+        <label>Value (sats)</label><input type="number" id="utxoValue" autocomplete="off" />
+        <label>Raw hex</label><textarea id="utxoHex" style="height: 60px;" autocomplete="off"></textarea>
+        <label>Receive address</label><input type="text" id="changeAddress" placeholder="bc1q... or tb1q..." autocomplete="off" />
+        <label>Fee rate (sats/vB)</label>
+        <div class="inline-group"><input type="number" id="feeRate" step="0.1" min="0.1" max="1000" value="1" /><button id="btnFetchFee" class="btn-secondary">Fetch</button></div>
+      </div>
+      <div class="card">
+        <div class="step-label">Step 4 · Generate signing request</div>
+        <div class="note">Generates an <strong>ephemeral commit/reveal key</strong> (discarded after broadcast). You sign the payload hash with your notification address key.</div>
+        <button id="btnGenerateHash">Generate message hash</button>
+        <div id="hashSection" style="display: none;">
+          <label>Message hash to sign (hex)</label>
+          <div class="inline-group"><textarea id="msgToSign" readonly></textarea><button id="btnCopyHash" class="btn-secondary">Copy</button></div>
+          <div class="note" id="signInstructions" style="margin-top: 14px;"></div>
+        </div>
+      </div>
+      <div class="card" id="sigCard" style="display: none;">
+        <div class="step-label">Step 5 · Paste signature</div>
+        <label>Base64 signature (from your Ashigaru or Samourai wallet's Sign Message)</label>
+        <textarea id="sparrowSig" placeholder="IA..." style="height: 60px;"></textarea>
+        <button id="btnBuildCommit">Build commit PSBT</button>
+      </div>
+      <div class="card" id="commitPsbtCard" style="display: none;">
+        <div class="step-label">Step 6 · Sign and broadcast commit PSBT</div>
+        <div class="note">Open a transaction from text. Paste the PSBT into Sparrow Wallet. Sign it, broadcast it, then paste the TXID into Commit TXID field below and broadcast the reveal transaction.</div>
+        <label>Commit PSBT (base64)</label>
+        <div class="inline-group"><textarea id="psbtOutput" readonly></textarea><button id="btnCopyPsbt" class="btn-secondary">Copy</button></div>
+        <label>Commit TXID</label><input type="text" id="commitTxid" autocomplete="off" />
+        <button id="btnBroadcastReveal" class="btn-confirm">Broadcast reveal transaction</button>
+
+        <div class="note" style="margin-top:18px; background: #78350f22; border-color: #78350f">
+          <strong>Reveal broadcast failing?</strong> A common cause is <code>too-long-mempool-chain</code>:
+          your commit transaction is still unconfirmed and the mempool won't accept a child that
+          depends on it. You can wait for confirmation and try again — but if you close the browser
+          in the meantime, the ephemeral key signing the reveal is destroyed and the commit output
+          is stranded. Use "Save signed reveal for later" to sign now and broadcast whenever the
+          parent has confirmed.
+        </div>
+        <button id="btnSaveReveal" class="btn-secondary" style="margin-top: 10px;">Save signed reveal for later</button>
+
+        <div id="savedRevealSection" style="display: none; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+          <div class="note note-success"><strong>Signed reveal saved.</strong> A file has been downloaded to your device. Keep it safe — anyone with this file can broadcast the reveal, and without it the commit output cannot be spent.</div>
+          <label>Signed reveal hex</label>
+          <div class="inline-group"><textarea id="savedRevealHex" readonly></textarea><button id="btnCopySavedReveal" class="btn-secondary">Copy</button></div>
+        </div>
+
+        <details style="margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+          <summary style="cursor: pointer; font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Broadcast a previously-saved reveal</summary>
+          <div style="margin-top: 12px;">
+            <div class="note">Paste the signed reveal hex you saved earlier. No wallet signing needed — this is the final transaction, ready to broadcast.</div>
+            <label>Signed reveal hex</label>
+            <textarea id="savedRevealInput" autocomplete="off" placeholder="0200000000010..."></textarea>
+            <button id="btnBroadcastSavedReveal" class="btn-confirm" style="margin-top: 10px;">Broadcast saved reveal</button>
+            <div id="savedRevealResult" style="margin-top: 10px; font-family: 'JetBrains Mono', monospace; font-size: 13px;"></div>
+          </div>
+        </details>
+      </div>
+      <div id="revealSection" class="card" style="display: none;">
+        <div class="note note-success"><strong>Reveal broadcast successfully.</strong></div>
+        <a id="revealLink" target="_blank" style="display:block; margin-top:12px; font-family: 'JetBrains Mono', monospace;">View transaction</a>
+        <button id="btnReset" class="btn-secondary" style="margin-top: 14px; width: 100%;">New inscription</button>
+      </div>
+    </div>
+
+    <!-- BROWSE -->
+    <div class="tab-panel" id="tab-browse">
+      <div class="card">
+        <div class="step-label">Sync &amp; index</div>
+        <div class="note">Discovers BIP47DB batches from the canonical deposit address. Data is cached locally (IndexedDB).</div>
+        <div class="stat-row" id="stats" style="display: none;">
+          <span>Batches<strong id="statBatches">0</strong></span>
+          <span>Valid<strong id="statValid">0</strong></span>
+          <span>Verified<strong id="statVerified">0</strong></span>
+          <span>Codes<strong id="statCodes">0</strong></span>
+        </div>
+        <div class="btn-row">
+          <button id="btnLoadBatches">Sync batches</button>
+          <button id="btnImportDb" class="btn-secondary">Import JSON</button>
+          <button id="btnExportDb" class="btn-secondary">Export DB</button>
+          <button id="btnClearDb" class="btn-danger">Clear</button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" />
+      </div>
+      <div class="card">
+        <div class="step-label">Search</div>
+        <label>Payment code, notification address, or publisher pubkey</label>
+        <div class="search-row"><input type="text" id="searchInput" placeholder="PM8T... or address or hex" /><button id="btnSearch">Search</button></div>
+        <div id="searchResult"></div>
+      </div>
+      <div id="batchList"></div>
+    </div>
+  </div>
+</body>
+</html>
