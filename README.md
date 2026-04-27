@@ -2,6 +2,8 @@
 
 **A Decentralised On-Chain Directory for BIP47 Payment Codes**
 
+This repository is the source for the BIP47DB project website at [bip47db.github.io](https://bip47db.github.io/). It holds the protocol whitepaper, the Publisher web app, and the documentation, all deployed via GitHub Pages.
+
 ---
 
 ## Overview
@@ -18,17 +20,43 @@ The protocol was motivated by the seizure of Samourai Wallet's infrastructure in
 - **Cost effective** — ~$156 for a 5,000 record batch at 1 sat/byte ($66K/BTC)
 - **Dual discovery** — MIME type filtering + canonical provably-unspendable deposit address
 
-## Repository Structure
+## What lives here
+
+| Live URL                             | Source                   | Description                                     |
+|--------------------------------------|--------------------------|-------------------------------------------------|
+| [`bip47db.github.io/`](https://bip47db.github.io/)        | `index.html`             | Landing page                                    |
+| [`bip47db.github.io/paper/`](https://bip47db.github.io/paper/)   | `paper/whitepaper.md`    | Protocol whitepaper (current draft: v1.4)       |
+| [`bip47db.github.io/docs/`](https://bip47db.github.io/docs/)    | `docs/PUBLISHER.md`      | Publisher app documentation                     |
+| [`bip47db.github.io/app/`](https://bip47db.github.io/app/)     | `app-src/` → built to `app/` | Publisher web app (inscribe & browse tool)  |
+
+## Repository structure
 
 ```
-├── index.html          # Page shell (loads whitepaper.md)
-├── whitepaper.md       # Whitepaper content (edit this to contribute)
-├── style.css           # Dark theme styling
-├── script.js           # TOC generation, copy buttons, scroll spy
+├── index.html          # Landing page
 ├── favicon.svg         # Favicon (SVG)
 ├── 192x192.png         # App icon (192px)
 ├── 512x512.png         # App icon (512px)
 ├── og-image.png        # Social preview image
+├── paper/              # Protocol whitepaper
+│   ├── index.html      # Markdown-renderer shell
+│   ├── whitepaper.md   # Whitepaper content
+│   ├── style.css       # Shared styling (duplicated in docs/)
+│   ├── script.js       # TOC, copy buttons, scroll spy (duplicated in docs/)
+│   └── *.png, *.svg    # Page icons
+├── docs/               # Publisher app documentation
+│   ├── index.html      # Markdown-renderer shell
+│   ├── PUBLISHER.md    # Documentation content
+│   ├── style.css       # Shared styling (duplicated from paper/)
+│   ├── script.js       # Shared renderer (duplicated from paper/)
+│   └── *.png, *.svg    # Page icons
+├── app/                # Built Vite bundle — do not edit directly
+│   ├── index.html
+│   └── assets/
+├── app-src/            # Publisher app source — edit here, rebuild to app/
+│   ├── index.html      # App shell
+│   ├── main.js         # App logic
+│   ├── package.json
+│   └── vite.config.js
 ├── README.md           # This file
 ├── CONTRIBUTING.md     # How to contribute
 └── LICENSE             # MIT License
@@ -36,25 +64,17 @@ The protocol was motivated by the seizure of Samourai Wallet's infrastructure in
 
 ## Contributing
 
-We welcome contributions from the Bitcoin privacy community, wallet developers, and anyone interested in decentralised infrastructure. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Contributions are welcome from the Bitcoin privacy community, wallet developers, and anyone interested in decentralised infrastructure. The process differs slightly depending on what you're changing — please read [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
-### Ways to contribute
+In brief:
 
-- **Review the protocol** — identify edge cases, security concerns, or optimisations
-- **Improve the writing** — fix errors, clarify language, add missing context
-- **Add implementation details** — inscription tooling, indexer code, wallet integration guides
-- **Build on it** — create an indexer, integrate into a wallet, or publish a batch
-
-### Quick start
-
-1. Fork this repository
-2. Create a branch (`git checkout -b fix/clarify-segwit-extension`)
-3. Edit `whitepaper.md` (the whitepaper content)
-4. Submit a pull request with a clear description of the change
+- **Protocol changes** edit `paper/whitepaper.md`
+- **Documentation changes** edit `docs/PUBLISHER.md`
+- **App changes** edit `app-src/`, rebuild, commit source + build together
 
 ## Status
 
-**DRAFT** — This whitepaper is under active development and community review. The protocol specification may change based on feedback.
+**DRAFT** — The protocol specification is at v1.4 and under active community review. The specification may change based on feedback. The Publisher app is functional and has been used for testnet4 inscriptions; mainnet use is at your own risk.
 
 ## License
 
