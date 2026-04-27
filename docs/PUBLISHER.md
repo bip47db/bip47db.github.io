@@ -10,14 +10,14 @@ The tool has two main tabs: **INSCRIBE** (publish payment codes on-chain) and **
 
 ## Network Support
 
-The tool supports both **Testnet4** and **Mainnet**, selectable via toggle buttons in the navigation bar. Each network has its own:
+The tool defaults to **Mainnet** and supports switching to **Testnet4** via toggle buttons in the navigation bar. Each network has its own:
 
 - Bitcoin network parameters (address prefixes, BIP32 keys)
 - Canonical NUMS deposit address
 - mempool.space API endpoint
 - IndexedDB database (`bip47db_testnet4` / `bip47db_mainnet`)
 
-Switching to Mainnet requires confirmation ("This uses real bitcoin"). Switching networks resets the inscribe form and clears the browse display since each network has a separate database. There is no cross-contamination between networks.
+Switching networks resets the inscribe form and clears the browse display since each network has a separate database. There is no cross-contamination between networks. When the active network is testnet4, a yellow banner appears below the nav bar as a "funny-money" indicator; mainnet has no banner because the active nav button already conveys the network.
 
 **Canonical deposit addresses:**
 
@@ -33,6 +33,17 @@ These are NUMS (Nothing-Up-My-Sleeve) addresses derived from `SHA-256(SHA-256("B
 ## INSCRIBE Tab
 
 The inscription process follows six steps. Each step is presented as a card that becomes active as the user progresses.
+
+### Two-wallet workflow
+
+Inscribing a batch requires two wallets, each playing a distinct role:
+
+- **Ashigaru or Samourai wallet** — provides your BIP47 identity. Used in Step 4 to sign the batch's message hash with the private key of your BIP47 notification address (via the wallet's "Sign Message" function). This proves to anyone verifying your batch that the payment codes were published by the holder of that BIP47 payment code.
+- **Sparrow Wallet** — provides the funds. Used in Step 3 to source a UTXO and supply its raw transaction hex, and used in Step 6 to sign and broadcast the commit transaction.
+
+This split exists because no single wallet, at the time of writing, supports both signing arbitrary messages with a BIP47 notification address key (which Ashigaru and Samourai do) and signing general PSBTs with a flexible interface (which Sparrow does).
+
+**The two wallets do not need to share keys.** Your Sparrow wallet can be a completely separate Bitcoin wallet from your Ashigaru or Samourai wallet — different seed, different keys, different network. The BIP47DB protocol couples them only through the publisher signature, which proves you control the BIP47 notification address; the protocol says nothing about who provided the funding UTXO. The wallets only need to agree on the network (testnet4 or mainnet).
 
 ### Step 1 · Payment Codes to Inscribe
 
@@ -88,19 +99,21 @@ The publisher enters their own BIP47 payment code (PM8T...). The tool derives:
 - The compressed public key (bytes 2–34 of the 80-byte payment code)
 - The BIP47 notification address (P2PKH address of the 0th child key derived from the payment code's public key and chain code using `@scure/bip32`)
 
-The notification address is displayed with instructions to sign the payload hash using this address's private key.
+The notification address is displayed alongside instructions to sign the payload hash with the matching private key from your Ashigaru or Samourai wallet (Step 4).
 
 ### Step 3 · Funding UTXO
 
-The user provides a UTXO they control to fund the commit transaction:
+The user provides a UTXO controlled by their Sparrow Wallet to fund the commit transaction:
 
 - **UTXO reference** (TXID:VOUT) — with a "Fetch" button that retrieves the raw hex and value from mempool.space
 - **Value in sats**
 - **Raw transaction hex**
-- **Change address**
+- **Receive address** — where any change from the commit transaction is returned
 - **Fee rate** (sats/vB) — with a "Fetch" button that retrieves the current recommended fee rate from mempool.space
 
 All input fields have `autocomplete="off"` to prevent browser autofill interference.
+
+The UTXO must be spendable by Sparrow (Step 6 hands the unsigned commit PSBT back to Sparrow for signing). Any standard Bitcoin output type Sparrow supports is fine — P2WPKH, P2TR, P2SH-wrapped segwit, etc.
 
 ### Step 4 · Generate Signing Request
 
@@ -115,11 +128,11 @@ Clicking "Generate message hash" performs the following:
 5. Generates an **ephemeral secp256k1 keypair** (used for the commit/reveal Taproot output; discarded after broadcast)
 6. Displays the message hash (hex) for the user to sign
 
-The user is instructed to sign this hash using their BIP47 notification address key via their wallet's "Sign Message" function (BIP-137 format).
+The user is instructed to sign this hash with their BIP47 notification address private key, using the Sign Message function in Ashigaru or Samourai. The wallet wraps the message with the BIP-137 Bitcoin Signed Message format and produces a base64 signature for the user to copy.
 
 ### Step 5 · Paste Signature
 
-The user pastes the base64 BIP-137 signature from their wallet. Clicking "Build commit PSBT":
+The user pastes the base64 BIP-137 signature produced by Ashigaru or Samourai. Clicking "Build commit PSBT":
 
 1. Decodes the 65-byte signature (1 header byte + 64 bytes ECDSA)
 2. Recovers the public key using secp256k1 key recovery
@@ -136,7 +149,7 @@ The user pastes the base64 BIP-137 signature from their wallet. Clicking "Build 
 
 ### Step 6 · Sign and Broadcast
 
-The user copies the commit PSBT, signs it in their wallet, broadcasts it, and pastes the commit TXID. At this point there are two paths — direct broadcast, and save-for-later — that share the same signing logic but differ in what happens to the signed hex.
+The user takes the commit PSBT into Sparrow Wallet via "Tools → Open transaction → from text", signs it (Sparrow recognizes the input as one of its own UTXOs from Step 3), broadcasts it, and pastes the resulting commit TXID back into the publisher tool. At this point there are two paths — direct broadcast, and save-for-later — that share the same signing logic but differ in what happens to the signed reveal hex.
 
 **Broadcast reveal transaction (normal path):**
 
@@ -217,7 +230,7 @@ Each batch is displayed as a collapsible card with four sub-tabs:
 
 **Codes** — lists all payment codes in the batch. The publisher's own code is marked with a "publisher" badge. Segwit-flagged codes show a "segwit" badge.
 
-**Header / Trailer** — a structured table showing version, record count, flags, header size (with legacy indicator), checksum validity, recovery flag, raw signature hex, signature format (BIP-137 or raw), message hash, publisher pubkey, publisher payment code, and verification status.
+**Header / Trailer** — a structured table showing version, record count, flags, header size (with legacy indicator), checksum validity, recovery flag, raw signature hex, message hash, and publisher pubkey. Identity-related fields (signature format, publisher payment code, verification status) are inferred during decoding and surface in the Verify tab rather than here.
 
 **Hex Dump** — an annotated two-column view breaking down every field:
 - Header: magic, version, record count, flags (and prev_txid for legacy headers)
@@ -325,12 +338,12 @@ Indexes: `paymentCode`, `notificationAddress`, `publisherKey`.
 
 1. Fetch codes from PayNym.rs (or paste PM8T codes manually)
 2. Click "Prepare batch" to deduplicate, sync chain, and trim to 5,000
-3. Enter your publisher payment code
-4. Provide a funding UTXO and fee rate
+3. Enter your publisher payment code (from your Ashigaru or Samourai wallet)
+4. Provide a funding UTXO and fee rate (UTXO from your Sparrow Wallet)
 5. Generate the message hash
-6. Sign the hash with your BIP47 notification address key (in Sparrow, Samourai/Ashigaru, or any BIP-137 compatible wallet)
+6. Sign the hash with your BIP47 notification address key in Ashigaru or Samourai (Sign Message function)
 7. Paste the signature → commit PSBT is generated
-8. Sign and broadcast the commit PSBT in your wallet
+8. Open Sparrow Wallet → Tools → Open transaction → from text. Paste the PSBT, sign it, broadcast it
 9. Paste the commit TXID, then either: click "Broadcast reveal transaction" to broadcast immediately (with automatic save-to-file fallback if the mempool rejects), or click "Save signed reveal for later" if a prior commit is still unconfirmed and you want to avoid `too-long-mempool-chain` errors
 10. (If saved) broadcast the saved reveal hex via the collapsible section once the commit has confirmed, or via any Bitcoin node / mempool.space's broadcast form
 11. For additional batches, set "Start from" to the next record and repeat
