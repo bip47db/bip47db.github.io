@@ -29,6 +29,26 @@ html, body { overflow-x: hidden; }
   color: var(--accent); margin-left: 12px; text-decoration: none;
 }
 .site-nav .brand:hover { color: var(--accent-hover); text-decoration: none; }
+/* Cross-page nav links (App / Protocol / Docs). Right-aligned via
+   margin-left:auto on the container. */
+.site-nav-links {
+  display: flex; gap: 4px; margin-left: auto;
+}
+.site-nav-links .nav-link {
+  font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500;
+  color: var(--text-muted); text-decoration: none;
+  padding: 6px 12px; border-radius: 5px;
+  transition: all 0.15s;
+}
+.site-nav-links .nav-link:hover {
+  color: var(--text); background: var(--bg-elevated); text-decoration: none;
+}
+.site-nav-links .nav-link-active {
+  color: var(--accent); background: var(--accent-dim);
+}
+@media (max-width: 500px) {
+  .site-nav-links .nav-link { padding: 6px 8px; font-size: 12px; }
+}
 
 /* ─── Sidebar ─── */
 #toc {
