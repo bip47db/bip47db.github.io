@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BIP47DB Publisher</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="192x192" href="/192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/512x512.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/192x192.png">
   <meta name="description" content="Publish and browse BIP47 payment codes on the Bitcoin blockchain. Client-side, no server, permissionless.">
   <link rel="canonical" href="https://bip47db.org/app/">
   <meta property="og:title" content="BIP47DB Publisher">
@@ -37,6 +41,22 @@
     .site-nav { display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: var(--header-h); align-items: center; }
     .site-nav .brand { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--accent); text-decoration: none; }
     .site-nav .brand:hover { color: var(--accent-hover); }
+    /* Cross-page navigation (Protocol, Docs). Sits immediately right of the
+       brand. The network switcher in .right keeps its margin-left:auto so it
+       still snaps to the far edge. */
+    .site-nav-links { display: flex; gap: 2px; margin-left: 24px; }
+    .site-nav-links .nav-link {
+      font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); text-decoration: none;
+      padding: 6px 12px; border-radius: 5px;
+      transition: all 0.15s;
+    }
+    .site-nav-links .nav-link:hover { color: var(--text); background: var(--bg-elevated); }
+    .site-nav-links .nav-link-active { color: var(--accent); background: var(--accent-dim); }
+    @media (max-width: 700px) {
+      .site-nav-links { margin-left: 12px; }
+      .site-nav-links .nav-link { padding: 6px 8px; font-size: 12px; }
+    }
     .site-nav .right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 
     #app { max-width: 1200px; margin: 0 auto; padding: calc(var(--header-h) + 32px) 40px 80px; }
@@ -213,6 +233,11 @@
 <body>
   <nav class="site-nav">
     <a class="brand" href="/">BIP47DB</a>
+    <div class="site-nav-links">
+      <a href="/app" class="nav-link nav-link-active">App</a>
+      <a href="/paper" class="nav-link">Protocol</a>
+      <a href="/docs" class="nav-link">Docs</a>
+    </div>
     <div class="right">
       <div class="net-switch">
         <button id="netMainnet" class="net-active-mainnet">Mainnet</button>
