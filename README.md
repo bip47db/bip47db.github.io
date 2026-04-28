@@ -2,7 +2,7 @@
 
 **A Decentralised On-Chain Directory for BIP47 Payment Codes**
 
-This repository is the source for the BIP47DB project website at [bip47db.github.io](https://bip47db.github.io/). It holds the protocol whitepaper, the Publisher web app, and the documentation, all deployed via GitHub Pages.
+This repository is the source for the BIP47DB project website at [bip47db.org](https://bip47db.org/). It holds the protocol whitepaper, the Publisher web app, and the documentation, all deployed via GitHub Pages with a custom domain.
 
 ---
 
@@ -24,10 +24,10 @@ The protocol was motivated by the seizure of Samourai Wallet's infrastructure in
 
 | Live URL                             | Source                   | Description                                     |
 |--------------------------------------|--------------------------|-------------------------------------------------|
-| [`bip47db.github.io/`](https://bip47db.github.io/)        | `index.html`             | Landing page                                    |
-| [`bip47db.github.io/paper/`](https://bip47db.github.io/paper/)   | `paper/whitepaper.md`    | Protocol whitepaper (current draft: v1.4)       |
-| [`bip47db.github.io/docs/`](https://bip47db.github.io/docs/)    | `docs/PUBLISHER.md`      | Publisher app documentation                     |
-| [`bip47db.github.io/app/`](https://bip47db.github.io/app/)     | `app-src/` → built to `app/` | Publisher web app (inscribe & browse tool)  |
+| [`bip47db.org/`](https://bip47db.org/)        | `index.html`             | Landing page                                    |
+| [`bip47db.org/paper/`](https://bip47db.org/paper/)   | `paper/whitepaper.md`    | Protocol whitepaper (current draft: v1.4)       |
+| [`bip47db.org/docs/`](https://bip47db.org/docs/)    | `docs/PUBLISHER.md`      | Publisher app documentation                     |
+| [`bip47db.org/app/`](https://bip47db.org/app/)     | `app-src/` → built to `app/` | Publisher web app (inscribe & browse tool)  |
 
 ## Repository structure
 
