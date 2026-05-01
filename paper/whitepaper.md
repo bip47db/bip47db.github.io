@@ -40,6 +40,8 @@ This seizure demonstrated the existential risk of relying on centralised infrast
 
 This problem is further compounded by wallet implementations that allow users to send to a BIP47 payment code without first broadcasting a notification transaction. This issue was first identified in Sparrow Wallet shortly after it introduced BIP47 support, where a user could pay directly to a payment code that had already connected *to them* (i.e. where the peer initiated the connection via a notification transaction) without requiring the user to send their own notification transaction in return. <sup>[13]</sup> That specific case was resolved shortly after Sparrow released PayNym support; however, the underlying issue persists in a related form. It remains possible to send to a BIP47 payment code in Sparrow without a notification transaction being created under certain circumstances. <sup>[14]</sup> While this saves the cost of an additional on-chain transaction, it means there is no outgoing notification transaction recorded on the blockchain for the wallet to discover during recovery. If the user subsequently restores their wallet from seed, there is no on-chain evidence that they ever sent payments to that peer’s payment code. The funds are not lost — they remain spendable by the recipient — but the sender’s transaction history becomes incomplete and the outgoing payment channel is invisible to the restored wallet. A decentralised on-chain directory of payment codes, as proposed by BIP47DB, would provide an additional recovery path in this scenario by allowing the wallet to resolve notification addresses to payment codes without depending on the existence of a corresponding outgoing notification transaction.
 
+A more pronounced version of this problem appears in BlueWallet, which implements BIP47 but does not query paynym.rs or any other directory service.<sup>[15][16]</sup> A BlueWallet user who restores from seed and has previously sent notification transactions can see the notification addresses on-chain but has no in-wallet mechanism to resolve them to payment codes, even though the data exists in a public directory accessible to other BIP47 wallets. The user must either know each peer’s payment code out-of-band or reconstruct connections by manually querying paynym.rs through a browser. BIP47DB removes this constraint by allowing any wallet, regardless of its directory integrations, to resolve notification addresses to payment codes by querying any indexer of the canonical deposit address (see §12.4 for an architectural fit specific to BlueWallet’s Electrum-backed design).
+
 Additionally, both Samourai and Ashigaru support the ability to "refund" a BIP47 payment back to the original sender without requiring a new notification transaction, since the sender’s payment code was already received via the incoming notification. This further illustrates that not all BIP47 payment flows create the on-chain notification trail that seed-only recovery depends upon.
 
 ### 3.2 Single Point of Failure
@@ -448,9 +450,29 @@ Sparrow Wallet, as a desktop application that already supports BIP47, <sup>[2]</
 
 **Publication:** Sparrow could offer a “Publish to blockchain” button in its PayNym management interface, creating a single-code inscription at the user’s discretion.
 
-### 12.4 Other Wallet Implementations
+### 12.4 BlueWallet Integration
+
+BlueWallet implements BIP47 but does not query any PayNym directory, leaving its users without the ability to resolve notification addresses to payment codes during recovery (§3.1). BIP47DB is particularly well-matched to BlueWallet’s architecture because the wallet already relies on Electrum servers for chain data:
+
+**Electrum-based resolution.** BlueWallet could resolve notification addresses to payment codes entirely through its existing Electrum server connection, with no paynym.rs dependency and no new server type. The wallet would issue one `blockchain.scripthash.get_history` request for the canonical BIP47DB deposit address (yielding the txids of every batch transaction), then `blockchain.transaction.get` per txid to retrieve each batch’s witness data. The wallet decodes the BIP47DB inscriptions client-side and builds a local map from notification address to payment code. Subsequent syncs are incremental — only batches whose txids are not already in the local map need to be fetched.
+
+**Privacy property.** Querying an Electrum server about the canonical BIP47DB deposit address reveals only that the user is a BIP47DB consumer, not which specific peers they care about resolving. By contrast, a wallet that queries paynym.rs (or any other directory) for individual notification addresses reveals to that server which peers a user is interested in. The Electrum-based BIP47DB query model is therefore strictly more private than per-address directory lookups.
+
+**Mobile considerations.** Decoding hundreds of compressed batches client-side adds non-trivial CPU and memory cost on a phone. A future Electrum protocol extension could expose pre-decoded BIP47DB indexes to clients (similar to how some Electrum servers expose pre-computed `get_balance` data), reducing client-side work to a simple lookup. Such an extension is not required for a working integration; it is a path for optimisation if mobile sync time becomes a bottleneck.
+
+**Publication.** BlueWallet could also offer users the option to publish their own payment codes via BIP47DB inscriptions, on the models described in §12.1. As a mobile-first wallet, batched coordinator-led inscription is likely a better fit than per-user inscription, since most BlueWallet users will not maintain UTXOs suitable for funding their own commit transactions.
+
+### 12.5 Other Wallet Implementations
 
 Any wallet implementing BIP47 (Stack Wallet, or future implementations) can adopt BIP47DB by adding inscription creation capabilities or by querying public BIP47DB indexers. The protocol imposes no wallet-specific requirements; it operates at the data layer.
+
+### 12.6 Reference Publisher Tool
+
+A reference web application, the BIP47DB Publisher, is available at `bip47db.org/app/`. It implements both the publisher role (assembling, compressing, signing, and inscribing batches) and the indexer role (scanning the canonical deposit address, decoding inscriptions, verifying signatures, and presenting an interface for browsing and search).
+
+The tool is fully client-side. No server is required; payment codes, signing material, and transactions are processed entirely in the browser. To accommodate the lack of any single wallet that supports both BIP47 message signing and arbitrary PSBT signing, the tool uses two wallets in concert: an Ashigaru or Samourai wallet provides BIP47 identity (signing the batch hash via Sign Message), and Sparrow Wallet provides funds (signing the commit PSBT via Tools → Open Transaction). The two wallets need not share keys.
+
+Source is published at `github.com/bip47db/bip47db.github.io` under the MIT licence. The tool is provided as a reference, not as a canonical implementation; alternative publishers and indexers MAY make different choices.
 
 ## 13. Directory Operator Integration
 
@@ -737,6 +759,18 @@ return results;
 
 ## Appendix B: Changelog
 
+### v1.5 — 2026-05-01
+
+**No protocol changes.** v1.5 is a documentation-and-validation release. The wire format, signing scheme, deposit address derivation, and decoder behaviour are byte-identical to v1.4. Indexers and publishers built against v1.4 do not need to be updated.
+
+**Reference publisher tool added (§12.6).** A new subsection documents the reference web-based implementation at `bip47db.org/app/`, with source published under MIT licence at `github.com/bip47db/bip47db.github.io`. The tool implements both publisher and indexer roles entirely client-side and serves as the canonical reference for what a working BIP47DB implementation looks like end-to-end. Wallet authors building their own integrations may use it as a behavioural reference rather than building from the spec alone.
+
+**BlueWallet integration path documented (§3.1, §12.4).** A new paragraph in §3.1 illustrates BlueWallet as a more pronounced instance of the asymmetric recovery problem: a BIP47-supporting wallet that performs no directory lookup at all, leaving users to reconstruct outgoing connections out-of-band or via manual browser queries. A new §12.4 subsection describes an architectural fit specific to BlueWallet's Electrum-backed design — notification addresses can be resolved to payment codes entirely through the wallet's existing Electrum server connection, without any paynym.rs dependency. The privacy property is favourable: querying for the canonical deposit address reveals only that the user is a BIP47DB consumer, not which specific peers are being resolved. Existing §12.4 (Other Wallet Implementations) renumbered to §12.5.
+
+**Cost figures empirically validated (Section 8).** The cost table in §8 was originally calculated from the wire format and an assumed compression ratio. The reference tool has now been used to inscribe production batches on mainnet at 5,000 records per batch, which round-tripped through Bitcoin Core mempool acceptance, miner inclusion, and indexer decoding. The §8 figures are therefore validated rather than purely theoretical at v1.5. The 5,000-record per-batch cap chosen by the reference tool is confirmed to leave adequate standardness headroom (~84,000 weight units below the 400,000 WU mainnet limit) at observed compression ratios.
+
+**Wallet integration sections refreshed (§12.2, §12.3).** The Ashigaru and Sparrow integration descriptions now reflect the empirically-validated two-wallet workflow used by the reference tool: an Ashigaru or Samourai wallet signs the batch hash via BIP-137 Sign Message (providing BIP47 identity), and Sparrow Wallet signs the commit PSBT via Tools → Open Transaction → from text (providing funds). The two wallets need not share keys. No spec changes — these subsections previously described possible integration shapes; v1.5 documents the shape that has been confirmed to work end-to-end.
+
 ### v1.4 — 2026-04-23
 
 **Header reduced from 40 bytes to 8 bytes (Sections 4, 5.1, 7.3, 11.2, 15.3, A.2, A.3).** The 32-byte `prev_txid` field has been removed. Cross-batch ordering is provided by Bitcoin block height and transaction position — which every Ordinals indexer already tracks — so an in-payload linkage field was redundant. The SQLite schema in Section 7.3 drops the `prev_txid` column; the decoding pipeline in Section 11.2 no longer contains a "follow the chain" step; the reference encoder and decoder in Appendix A are updated accordingly.
@@ -822,5 +856,13 @@ Initial publication for community review.
 *Cited in:* Section 3.1
 
 **[14]** sparrowwallet/sparrow, GitHub Issue #1982. *Sending to a BIP47 payment code doesn’t require a notification transaction to be made.* https://github.com/sparrowwallet/sparrow/issues/1982
+
+*Cited in:* Section 3.1
+
+**[15]** BlueWallet/BlueWallet, GitHub Pull Request #4520. *[WIP] BIP-47 feature implementation.* https://github.com/BlueWallet/BlueWallet/pull/4520
+
+*Cited in:* Section 3.1
+
+**[16]** linkinparkrulz/BlueWallet, fork at v2.0.0. *Community fork adding PayNym lookup capability absent from upstream BlueWallet.* https://github.com/linkinparkrulz/BlueWallet/tree/v2.0.0
 
 *Cited in:* Section 3.1
