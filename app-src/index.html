@@ -62,28 +62,59 @@
       left: 50%; top: 50%;
       transform: translate(-50%, -50%);
     }
-    #netSelect {
-      font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600;
-      letter-spacing: 0.3px;
-      background: var(--bg); color: var(--text);
-      border: 1px solid var(--border); border-radius: 6px;
-      padding: 4px 22px 4px 10px;
-      cursor: pointer;
-      /* Subtle dropdown arrow drawn with a background SVG so it matches
-         on every platform without showing the OS-default control. */
-      appearance: none; -webkit-appearance: none; -moz-appearance: none;
-      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" stroke="%238b949e" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');
-      background-repeat: no-repeat;
-      background-position: right 6px center;
-      background-size: 10px;
+    /* Custom network selector — Bitcoin glyph trigger with full-text menu.
+       The trigger shows a small Bitcoin logo (orange = Mainnet, grey =
+       Testnet4). Clicking opens a dropdown with both options labelled in
+       full. This keeps the header narrow on mobile (no two-row wrap) while
+       making the network choice visible on demand. */
+    #netTrigger {
+      background: transparent; border: none; border-radius: 50%;
+      width: 28px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+      transition: transform 0.15s;
     }
-    #netSelect:hover { border-color: var(--text-subtle); }
-    #netSelect:focus { outline: none; border-color: var(--accent); }
-    /* Network-coloured tint when the dropdown's value reflects a specific
-       network. The tint is on the wrapper rather than the select itself so
-       the OS's open-state styling isn't overridden. */
-    .net-switcher-wrap[data-net="mainnet"] #netSelect { color: var(--green); border-color: var(--green); }
-    .net-switcher-wrap[data-net="testnet4"] #netSelect { color: var(--yellow); border-color: var(--yellow); }
+    #netTrigger:hover { transform: scale(1.08); }
+    #netTrigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .net-icon {
+      width: 22px; height: 22px;
+      display: block;
+    }
+    /* Mainnet → orange. Testnet4 → muted grey. The colour is applied via
+       'color' on the wrapper, and the SVG uses currentColor so the same
+       inline <svg> is reused for both states. */
+    .net-switcher-wrap[data-net="mainnet"] { color: var(--accent); }
+    .net-switcher-wrap[data-net="testnet4"] { color: var(--text-subtle); }
+
+    #netMenu {
+      position: absolute;
+      top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      padding: 4px; margin: 0; list-style: none;
+      min-width: 140px;
+      display: none; z-index: 300;
+    }
+    #netMenu.open { display: block; }
+    #netMenu li {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 4px;
+      font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500;
+      color: var(--text); cursor: pointer;
+      transition: background 0.1s;
+    }
+    #netMenu li:hover { background: var(--bg-elevated); }
+    #netMenu li[aria-selected="true"]::after {
+      content: '✓'; margin-left: auto; color: var(--accent); font-size: 11px;
+    }
+    /* In-menu icons are smaller than the trigger and inherit colour from
+       data-net on the <li> itself. */
+    #netMenu .net-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    #netMenu li[data-value="mainnet"] { color: var(--accent); }
+    #netMenu li[data-value="testnet4"] { color: var(--text-subtle); }
+    /* But the text label inside the menu items reads in normal body colour
+       — only the icon takes the network-specific tint. */
+    #netMenu li .label { color: var(--text); }
 
     /* Cross-page navigation (Home / App / Protocol / Docs). Right column. */
     .site-nav-links { display: flex; gap: 2px; margin-left: auto; }
@@ -96,29 +127,11 @@
     .site-nav-links .nav-link:hover { color: var(--text); background: var(--bg-elevated); }
     .site-nav-links .nav-link-active { color: var(--accent); background: var(--accent-dim); }
 
-    /* Mobile: a single 48px row can't fit brand + centred dropdown + four
-       nav links comfortably. Switch to a stacked two-row layout. The
-       dropdown comes back into flow (absolute positioning is dropped) and
-       sits on its own row, centred. The nav links wrap to the second row
-       if needed. The header grows in height to accommodate. */
+    /* Mobile: with the network selector reduced to a small dot, the entire
+       header fits on one row. We just shrink the cross-nav padding and font
+       slightly to keep things comfortable on narrow screens. */
     @media (max-width: 700px) {
-      .site-nav {
-        flex-wrap: wrap;
-        height: auto;
-        padding: 6px 16px;
-        row-gap: 4px;
-      }
-      .net-switcher-wrap {
-        position: static;
-        transform: none;
-        margin-left: auto;
-      }
-      .site-nav-links {
-        flex-basis: 100%;
-        justify-content: center;
-        flex-wrap: wrap;
-        margin-left: 0;
-      }
+      .site-nav { padding: 0 16px; }
       .site-nav-links .nav-link { padding: 6px 10px; font-size: 12px; }
     }
 
@@ -283,15 +296,36 @@
       .stat-row span { flex: 1 1 40%; text-align: center; }
     }
   </style>
+  <script type="module" crossorigin src="/app/assets/index-CBHvXvx4.js"></script>
 </head>
 <body>
   <nav class="site-nav">
     <a class="brand" href="/">BIP47DB</a>
     <div class="net-switcher-wrap" data-net="mainnet">
-      <select id="netSelect" aria-label="Bitcoin network">
-        <option value="mainnet">Mainnet</option>
-        <option value="testnet4">Testnet4</option>
-      </select>
+      <button id="netTrigger" type="button"
+              aria-haspopup="listbox" aria-expanded="false"
+              aria-label="Bitcoin network: Mainnet" title="Mainnet">
+        <svg class="net-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="16" cy="16" r="16" fill="currentColor"/>
+          <path fill="#fff" d="M21.66 14.06c.31-2.07-1.27-3.18-3.42-3.92l.7-2.8-1.7-.43-.68 2.73c-.45-.11-.91-.22-1.37-.32l.69-2.75-1.7-.42-.7 2.8c-.37-.08-.74-.17-1.09-.25v-.01l-2.35-.59-.45 1.81s1.27.29 1.24.31c.69.17.82.63.8 1l-.8 3.2c.05.01.11.03.18.06l-.18-.05-1.13 4.49c-.09.21-.3.53-.79.41.02.03-1.24-.31-1.24-.31l-.84 1.95 2.21.55c.41.1.82.21 1.21.31l-.71 2.83 1.7.42.7-2.8c.46.13.91.24 1.35.35l-.69 2.79 1.7.43.71-2.83c2.9.55 5.08.33 6-2.3.74-2.12-.04-3.34-1.57-4.14 1.11-.26 1.95-.99 2.18-2.5zm-3.9 5.46c-.52 2.12-4.09.97-5.25.69l.94-3.76c1.16.29 4.86.86 4.31 3.07zm.53-5.49c-.48 1.93-3.45.95-4.41.71l.85-3.41c.96.24 4.06.69 3.56 2.7z"/>
+        </svg>
+      </button>
+      <ul id="netMenu" role="listbox" aria-label="Bitcoin network">
+        <li role="option" data-value="mainnet" aria-selected="true">
+          <svg class="net-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="16" cy="16" r="16" fill="currentColor"/>
+            <path fill="#fff" d="M21.66 14.06c.31-2.07-1.27-3.18-3.42-3.92l.7-2.8-1.7-.43-.68 2.73c-.45-.11-.91-.22-1.37-.32l.69-2.75-1.7-.42-.7 2.8c-.37-.08-.74-.17-1.09-.25v-.01l-2.35-.59-.45 1.81s1.27.29 1.24.31c.69.17.82.63.8 1l-.8 3.2c.05.01.11.03.18.06l-.18-.05-1.13 4.49c-.09.21-.3.53-.79.41.02.03-1.24-.31-1.24-.31l-.84 1.95 2.21.55c.41.1.82.21 1.21.31l-.71 2.83 1.7.42.7-2.8c.46.13.91.24 1.35.35l-.69 2.79 1.7.43.71-2.83c2.9.55 5.08.33 6-2.3.74-2.12-.04-3.34-1.57-4.14 1.11-.26 1.95-.99 2.18-2.5zm-3.9 5.46c-.52 2.12-4.09.97-5.25.69l.94-3.76c1.16.29 4.86.86 4.31 3.07zm.53-5.49c-.48 1.93-3.45.95-4.41.71l.85-3.41c.96.24 4.06.69 3.56 2.7z"/>
+          </svg>
+          <span class="label">Mainnet</span>
+        </li>
+        <li role="option" data-value="testnet4" aria-selected="false">
+          <svg class="net-icon" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="16" cy="16" r="16" fill="currentColor"/>
+            <path fill="#fff" d="M21.66 14.06c.31-2.07-1.27-3.18-3.42-3.92l.7-2.8-1.7-.43-.68 2.73c-.45-.11-.91-.22-1.37-.32l.69-2.75-1.7-.42-.7 2.8c-.37-.08-.74-.17-1.09-.25v-.01l-2.35-.59-.45 1.81s1.27.29 1.24.31c.69.17.82.63.8 1l-.8 3.2c.05.01.11.03.18.06l-.18-.05-1.13 4.49c-.09.21-.3.53-.79.41.02.03-1.24-.31-1.24-.31l-.84 1.95 2.21.55c.41.1.82.21 1.21.31l-.71 2.83 1.7.42.7-2.8c.46.13.91.24 1.35.35l-.69 2.79 1.7.43.71-2.83c2.9.55 5.08.33 6-2.3.74-2.12-.04-3.34-1.57-4.14 1.11-.26 1.95-.99 2.18-2.5zm-3.9 5.46c-.52 2.12-4.09.97-5.25.69l.94-3.76c1.16.29 4.86.86 4.31 3.07zm.53-5.49c-.48 1.93-3.45.95-4.41.71l.85-3.41c.96.24 4.06.69 3.56 2.7z"/>
+          </svg>
+          <span class="label">Testnet4</span>
+        </li>
+      </ul>
     </div>
     <div class="site-nav-links">
       <a href="/app" class="nav-link nav-link-active">App</a>
@@ -444,6 +478,5 @@
       <div id="batchList"></div>
     </div>
   </div>
-  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
