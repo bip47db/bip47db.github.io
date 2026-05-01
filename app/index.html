@@ -37,14 +37,56 @@
     html { scroll-behavior: smooth; }
     body { font-family: 'IBM Plex Sans', -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.65; min-height: 100vh; }
 
-    /* ── Nav ── */
-    .site-nav { display: flex; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: var(--header-h); align-items: center; }
+    /* ── Nav ──
+       Flex layout: brand sits left, cross-nav right. The network selector
+       is positioned absolutely at the geometric centre of the bar so its
+       horizontal position is independent of how wide the brand or cross-nav
+       happen to be — which would otherwise pull a flow-positioned centre
+       element off-axis. */
+    .site-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      background: var(--bg-surface); border-bottom: 1px solid var(--border);
+      padding: 0 20px; height: var(--header-h);
+    }
     .site-nav .brand { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--accent); text-decoration: none; }
     .site-nav .brand:hover { color: var(--accent-hover); }
-    /* Cross-page navigation (Protocol, Docs). Sits immediately right of the
-       brand. The network switcher in .right keeps its margin-left:auto so it
-       still snaps to the far edge. */
-    .site-nav-links { display: flex; gap: 2px; margin-left: 24px; }
+
+    /* Network selector — overlay-centred. Pulled out of normal flow and
+       pinned at left:50% with a translate(-50%) to centre on the page's
+       horizontal axis. */
+    .net-switcher-wrap {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #netSelect {
+      font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600;
+      letter-spacing: 0.3px;
+      background: var(--bg); color: var(--text);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px 22px 4px 10px;
+      cursor: pointer;
+      /* Subtle dropdown arrow drawn with a background SVG so it matches
+         on every platform without showing the OS-default control. */
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3 3 3-3" stroke="%238b949e" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      background-size: 10px;
+    }
+    #netSelect:hover { border-color: var(--text-subtle); }
+    #netSelect:focus { outline: none; border-color: var(--accent); }
+    /* Network-coloured tint when the dropdown's value reflects a specific
+       network. The tint is on the wrapper rather than the select itself so
+       the OS's open-state styling isn't overridden. */
+    .net-switcher-wrap[data-net="mainnet"] #netSelect { color: var(--green); border-color: var(--green); }
+    .net-switcher-wrap[data-net="testnet4"] #netSelect { color: var(--yellow); border-color: var(--yellow); }
+
+    /* Cross-page navigation (Home / App / Protocol / Docs). Right column. */
+    .site-nav-links { display: flex; gap: 2px; margin-left: auto; }
     .site-nav-links .nav-link {
       font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 500;
       color: var(--text-muted); text-decoration: none;
@@ -53,11 +95,32 @@
     }
     .site-nav-links .nav-link:hover { color: var(--text); background: var(--bg-elevated); }
     .site-nav-links .nav-link-active { color: var(--accent); background: var(--accent-dim); }
+
+    /* Mobile: a single 48px row can't fit brand + centred dropdown + four
+       nav links comfortably. Switch to a stacked two-row layout. The
+       dropdown comes back into flow (absolute positioning is dropped) and
+       sits on its own row, centred. The nav links wrap to the second row
+       if needed. The header grows in height to accommodate. */
     @media (max-width: 700px) {
-      .site-nav-links { margin-left: 12px; }
-      .site-nav-links .nav-link { padding: 6px 8px; font-size: 12px; }
+      .site-nav {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 6px 16px;
+        row-gap: 4px;
+      }
+      .net-switcher-wrap {
+        position: static;
+        transform: none;
+        margin-left: auto;
+      }
+      .site-nav-links {
+        flex-basis: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-left: 0;
+      }
+      .site-nav-links .nav-link { padding: 6px 10px; font-size: 12px; }
     }
-    .site-nav .right { margin-left: auto; display: flex; align-items: center; gap: 4px; }
 
     #app { max-width: 1200px; margin: 0 auto; padding: calc(var(--header-h) + 32px) 40px 80px; }
 
@@ -202,14 +265,6 @@
     @keyframes toastIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes toastOut { from { opacity: 1; } to { opacity: 0; } }
 
-    .net-switch { display: flex; gap: 2px; background: var(--bg); border-radius: 6px; padding: 2px; border: 1px solid var(--border); }
-    .site-nav .net-switch button { background: transparent; border: none; color: var(--text-subtle); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; padding: 4px 14px; border-radius: 4px; cursor: pointer; transition: all 0.15s; margin: 0; width: auto; letter-spacing: 0.3px; }
-    .site-nav .net-switch button:hover { color: var(--text); background: transparent; }
-    .site-nav .net-switch button:hover:not(:disabled) { background: var(--bg-elevated); }
-    .site-nav .net-switch button.net-active-testnet { background: var(--yellow); color: #000; }
-    .site-nav .net-switch button.net-active-testnet:hover { background: var(--yellow); }
-    .site-nav .net-switch button.net-active-mainnet { background: var(--green); color: #000; }
-    .site-nav .net-switch button.net-active-mainnet:hover { background: var(--green); }
     .net-banner { text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; padding: 6px; margin-bottom: 20px; border-radius: 6px; }
     .net-banner.net-testnet4 { background: #78350f33; color: var(--yellow); border: 1px solid #78350f; }
     .net-banner.net-mainnet { background: #14532d33; color: var(--green); border: 1px solid var(--border-tech); }
@@ -228,21 +283,21 @@
       .stat-row span { flex: 1 1 40%; text-align: center; }
     }
   </style>
-  <script type="module" crossorigin src="/app/assets/index-Bbb6Zcrw.js"></script>
 </head>
 <body>
   <nav class="site-nav">
     <a class="brand" href="/">BIP47DB</a>
+    <div class="net-switcher-wrap" data-net="mainnet">
+      <select id="netSelect" aria-label="Bitcoin network">
+        <option value="mainnet">Mainnet</option>
+        <option value="testnet4">Testnet4</option>
+      </select>
+    </div>
     <div class="site-nav-links">
+      <a href="/" class="nav-link">Home</a>
       <a href="/app" class="nav-link nav-link-active">App</a>
       <a href="/paper" class="nav-link">Protocol</a>
       <a href="/docs" class="nav-link">Docs</a>
-    </div>
-    <div class="right">
-      <div class="net-switch">
-        <button id="netMainnet" class="net-active-mainnet">Mainnet</button>
-        <button id="netTestnet">Testnet4</button>
-      </div>
     </div>
   </nav>
 
@@ -390,5 +445,6 @@
       <div id="batchList"></div>
     </div>
   </div>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
