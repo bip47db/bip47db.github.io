@@ -244,17 +244,23 @@ function switchNetwork(net) {
   currentNet = net;
   buildState = {};
 
-  // Sync the dropdown's selected value (and its wrapper's data-net attribute,
-  // which drives the green/yellow border tint) so the UI reflects the active
-  // network. Setting .value programmatically does not fire a 'change' event,
-  // so it's safe to call switchNetwork() from anywhere without re-entering.
-  const sel = document.getElementById('netSelect');
-  if (sel) sel.value = net;
+  // Update the wrapper's data-net (drives the dot colour) and the trigger's
+  // aria-label / title so screen readers and tooltips reflect the active
+  // network. Update aria-selected on menu items.
   const wrap = document.querySelector('.net-switcher-wrap');
   if (wrap) wrap.setAttribute('data-net', net);
+  const trigger = document.getElementById('netTrigger');
+  if (trigger) {
+    const label = net === 'mainnet' ? 'Mainnet' : 'Testnet4';
+    trigger.setAttribute('aria-label', 'Bitcoin network: ' + label);
+    trigger.setAttribute('title', label);
+  }
+  document.querySelectorAll('#netMenu li').forEach((li) => {
+    li.setAttribute('aria-selected', li.dataset.value === net ? 'true' : 'false');
+  });
 
   // Update banner — shown only on testnet4 as a "funny-money" indicator.
-  // Mainnet has no banner (the dropdown's green tint already conveys network).
+  // Mainnet has no banner (the dot's colour already conveys network).
   const banner = document.getElementById('netBanner');
   if (net === 'mainnet') {
     banner.style.display = 'none';
@@ -274,11 +280,64 @@ function switchNetwork(net) {
   document.getElementById('searchResult').innerHTML = '';
 }
 
-document.getElementById('netSelect').addEventListener('change', (e) => {
-  const next = e.target.value;
-  if (next === currentNet) return;
-  switchNetwork(next);
-});
+// Custom network selector — dot trigger + listbox menu.
+(function setupNetSelector() {
+  const trigger = document.getElementById('netTrigger');
+  const menu = document.getElementById('netMenu');
+  if (!trigger || !menu) return;
+
+  function openMenu() {
+    menu.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+    // Close on next outside click. Capture phase + setTimeout so the click
+    // that opened the menu doesn't immediately close it.
+    setTimeout(() => {
+      document.addEventListener('click', closeOnOutsideClick, { capture: true, once: true });
+    }, 0);
+  }
+  function closeMenu() {
+    menu.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+  function closeOnOutsideClick(e) {
+    if (!menu.contains(e.target) && e.target !== trigger) {
+      closeMenu();
+    } else if (menu.contains(e.target)) {
+      // Clicked inside menu — let the menu's own click handler run, then
+      // re-arm for the next interaction.
+      setTimeout(() => {
+        document.addEventListener('click', closeOnOutsideClick, { capture: true, once: true });
+      }, 0);
+    }
+  }
+
+  trigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (menu.classList.contains('open')) closeMenu(); else openMenu();
+  });
+
+  trigger.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      openMenu();
+      const first = menu.querySelector('li');
+      if (first) first.focus();
+    }
+  });
+
+  menu.addEventListener('click', (e) => {
+    const li = e.target.closest('li[role="option"]');
+    if (!li) return;
+    const next = li.dataset.value;
+    closeMenu();
+    if (next !== currentNet) switchNetwork(next);
+  });
+
+  // Escape key closes the menu wherever focus is.
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.classList.contains('open')) closeMenu();
+  });
+})();
 
 /* ═══════════════════════════════════════════════════════════════
    Tabs
@@ -298,7 +357,12 @@ document.querySelectorAll('.tab').forEach((b) =>
    INSCRIBE — Step 1: fetch, paste JSON, line numbers
    ═══════════════════════════════════════════════════════════════ */
 
-const CORS_PROXY = 'https://corsproxy.io/?';
+// Self-hosted CORS proxy on Cloudflare Workers. The worker only relays
+// requests to https://paynym.rs/api/v1/nyms, with an Origin allowlist so
+// only this app (and localhost during dev) can use it. Replaces the
+// previous corsproxy.io dependency, which started rejecting requests
+// from bip47db.org as part of an undocumented policy change.
+const CORS_PROXY = 'https://black-bread-8395.max-f0a.workers.dev/?url=';
 
 // Build the PayNym.rs URL that reflects the current Start from / Limit inputs,
 // used (a) as the href of the "Paste JSON manually" link so a user can open the
