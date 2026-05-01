@@ -244,14 +244,17 @@ function switchNetwork(net) {
   currentNet = net;
   buildState = {};
 
-  // Update nav buttons
-  document.getElementById('netMainnet').className =
-    net === 'mainnet' ? 'net-active-mainnet' : '';
-  document.getElementById('netTestnet').className =
-    net === 'testnet4' ? 'net-active-testnet' : '';
+  // Sync the dropdown's selected value (and its wrapper's data-net attribute,
+  // which drives the green/yellow border tint) so the UI reflects the active
+  // network. Setting .value programmatically does not fire a 'change' event,
+  // so it's safe to call switchNetwork() from anywhere without re-entering.
+  const sel = document.getElementById('netSelect');
+  if (sel) sel.value = net;
+  const wrap = document.querySelector('.net-switcher-wrap');
+  if (wrap) wrap.setAttribute('data-net', net);
 
   // Update banner — shown only on testnet4 as a "funny-money" indicator.
-  // Mainnet has no banner (the active nav button already conveys network).
+  // Mainnet has no banner (the dropdown's green tint already conveys network).
   const banner = document.getElementById('netBanner');
   if (net === 'mainnet') {
     banner.style.display = 'none';
@@ -271,14 +274,10 @@ function switchNetwork(net) {
   document.getElementById('searchResult').innerHTML = '';
 }
 
-document.getElementById('netMainnet').addEventListener('click', () => {
-  if (currentNet === 'mainnet') return;
-  switchNetwork('mainnet');
-});
-
-document.getElementById('netTestnet').addEventListener('click', () => {
-  if (currentNet === 'testnet4') return;
-  switchNetwork('testnet4');
+document.getElementById('netSelect').addEventListener('change', (e) => {
+  const next = e.target.value;
+  if (next === currentNet) return;
+  switchNetwork(next);
 });
 
 /* ═══════════════════════════════════════════════════════════════
