@@ -74,7 +74,7 @@ In brief:
 
 ## Status
 
-**DRAFT** — The protocol specification is at v1.4 and under active community review. The specification may change based on feedback. The Publisher app is functional and has been used for testnet4 inscriptions; mainnet use is at your own risk.
+**DRAFT** — The protocol specification is at v1.5 and under active community review. The specification may change based on feedback. The Publisher app is functional and has been used for testnet4 inscriptions; mainnet use is at your own risk.
 
 ## License
 
