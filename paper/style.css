@@ -17,7 +17,7 @@ html, body { overflow-x: hidden; }
   display: flex;
   position: fixed; top: 0; left: 0; right: 0; z-index: 200;
   background: var(--bg-surface); border-bottom: 1px solid var(--border);
-  padding: 0 16px; height: var(--header-h); align-items: center;
+  padding: 0 20px; height: var(--header-h); align-items: center;
 }
 .site-nav button {
   background: none; border: none; color: var(--text); font-size: 22px;
@@ -25,7 +25,7 @@ html, body { overflow-x: hidden; }
 }
 .site-nav button:hover { color: var(--accent); }
 .site-nav .brand {
-  font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600;
+  font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700;
   color: var(--accent); margin-left: 12px; text-decoration: none;
 }
 .site-nav .brand:hover { color: var(--accent-hover); text-decoration: none; }
@@ -63,10 +63,14 @@ html, body { overflow-x: hidden; }
 #toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 #toc.collapsed { transform: translateX(-100%); }
 .toc-header {
+  display: block;
   font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-subtle);
   padding: 0 20px 12px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 8px;
+  text-decoration: none;
+  transition: color 0.15s;
 }
+a.toc-header:hover { color: var(--accent); text-decoration: none; }
 #toc ul { list-style: none; }
 #toc li a {
   display: block; padding: 4px 20px; color: var(--text-muted); text-decoration: none;
