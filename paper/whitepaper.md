@@ -353,11 +353,9 @@ Runes is an elegant protocol optimised for fungible token lifecycle management: 
 
 A critical property of BIP47DB is that every record is independently verifiable without trusting the publisher. Payment codes are validated by checking that the embedded 33-byte compressed public key (sign byte + x-coordinate) represents a valid point on the secp256k1 elliptic curve. <sup>[1] [3]</sup> Specifically:
 
-**1.** The sign byte (offset 2) must be 0x02 or 0x03.
-
-**2.** The x-coordinate (offset 3–34, 32 bytes) must be in the range [1, p−1] where p is the secp256k1 field prime.
-
-**3.** When substituted into the curve equation y² = x³ + 7 (mod p), the result must be a quadratic residue modulo p.
+1. The sign byte (offset 2) must be 0x02 or 0x03.
+2. The x-coordinate (offset 3–34, 32 bytes) must be in the range [1, p−1] where p is the secp256k1 field prime.
+3. When substituted into the curve equation y² = x³ + 7 (mod p), the result must be a quadratic residue modulo p.
 
 These checks require no network access, no trusted third party, and only basic elliptic curve arithmetic available in any Bitcoin library. Libraries such as tiny-secp256k1 (a WebAssembly-based implementation that works in both browsers and Node.js) can perform these checks with a single function call. Invalid codes (corrupted data, malicious entries, or garbage) are silently discarded. This means anyone — a wallet developer, a directory operator, or an anonymous community member — can publish BIP47DB inscriptions, and the data is trustworthy solely by virtue of mathematical validation.
 
@@ -769,7 +767,7 @@ return results;
 
 **§12.4 opener revised.** The BlueWallet integration section now opens with a callback to §3.1, anchoring BlueWallet as the canonical motivating case for BIP47DB rather than as one wallet among several on the integration list.
 
-
+### v1.5 — 2026-05-01
 
 **No protocol changes.** v1.5 is a documentation-and-validation release. The wire format, signing scheme, deposit address derivation, and decoder behaviour are byte-identical to v1.4. Indexers and publishers built against v1.4 do not need to be updated.
 
