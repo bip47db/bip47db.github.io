@@ -151,6 +151,22 @@ tr:nth-child(even) td { background: var(--bg-surface); }
   word-break: break-all;
 }
 
+/* ─── List indentation ───
+   Explicitly indent lists in article content so bullets/numbers sit
+   inboard of the body text. The browser default is 40px which gets
+   overridden inconsistently by various reset stylesheets; setting it
+   here guarantees the rendering. */
+#article ul, #article ol {
+  padding-left: 28px;
+  margin: 12px 0;
+}
+#article li {
+  margin: 4px 0;
+}
+#article li > ul, #article li > ol {
+  margin: 4px 0;
+}
+
 @media (max-width: 900px) {
   table {
     display: block;
