@@ -1,12 +1,8 @@
-# BIP47DB Publisher — Web Tool Documentation
-
 ## Overview
 
 The BIP47DB Publisher is a client-side web tool for inscribing BIP47 reusable payment codes onto the Bitcoin blockchain using Ordinals inscriptions. All cryptographic operations, transaction construction, and data handling run entirely in the browser — no server-side processing, no data leaves the user's machine.
 
 The tool has two main tabs: **INSCRIBE** (publish payment codes on-chain) and **BROWSE** (view and verify existing inscriptions).
-
----
 
 ## Network Support
 
@@ -27,8 +23,6 @@ Switching networks resets the inscribe form and clears the browse display since 
 | Testnet4 | `tb1pn2zjxaax22ex4akv5v9j0rw22hyr4td3550jr4gf5ttf6zdsp5xsjd7fwd` |
 
 These are NUMS (Nothing-Up-My-Sleeve) addresses derived from `SHA-256(SHA-256("BIP47DB/v1"))`, used as a Taproot x-only public key with BIP-341 taptweak. All BIP47DB inscriptions are sent to these addresses, which serve as an indexing anchor — anyone can discover all inscriptions by scanning transactions to this address.
-
----
 
 ## INSCRIBE Tab
 
@@ -194,8 +188,6 @@ A collapsible section at the bottom of the Step 6 card accepts pasted hex (inclu
 - Anyone with the saved hex file can broadcast the reveal, but the reveal only sends 546 sats to the canonical NUMS deposit address — it has no ability to redirect funds elsewhere, so the "capability" the file represents is limited to completing or not completing this one specific inscription.
 - If the user loses the saved file before broadcasting *and* the ephemeral key is no longer in memory (because either the broadcast-with-fallback or save path has run), the commit output is stranded. This is the failure mode the feature exists to prevent. The prominent warning in the success card is deliberate.
 
----
-
 ## BROWSE Tab
 
 ### Sync & Index
@@ -249,8 +241,6 @@ Search by payment code (PM8T...), notification address, or publisher pubkey hex.
 - **Export DB** — downloads the full IndexedDB contents as a JSON file, named with the current network and timestamp (e.g., `bip47db-testnet4-2026-04-22T19-00-00.json`). The export includes schema version, network, canonical deposit address, and all batches and codes.
 - **Import JSON** — loads a previously exported JSON file, merging new batches/codes into the existing database without overwriting duplicates. Reports counts of imported vs skipped records.
 - **Clear** — deletes all cached data from IndexedDB (with confirmation dialog).
-
----
 
 ## Technical Details
 
@@ -329,8 +319,6 @@ Indexes: `blockHeight`, `publisherKey`.
 **`codes`** (keyPath: `[batchTxid, paymentCode]`) — stores individual payment codes with their notification address, segwit flag, block height, and publisher key reference.
 
 Indexes: `paymentCode`, `notificationAddress`, `publisherKey`.
-
----
 
 ## Workflow Summary
 
