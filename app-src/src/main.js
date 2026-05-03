@@ -747,6 +747,63 @@ document.getElementById('btnGenerateHash').addEventListener('click', async () =>
       Buffer.concat([c, Buffer.from([0x00])])));
     const hAndB = Buffer.concat([header, body]);
     const msgHash = await sha256(hAndB);
+
+    // Pre-flight: confirm the funding UTXO can cover the commit transaction,
+    // the reveal transaction's prepaid fee, the 546-sat reveal output, AND
+    // leave a non-dust receive output (≥546 sats). Doing this BEFORE asking
+    // the user to sign the message in their wallet saves them a wasted round
+    // trip in their BIP47 wallet if their UTXO is too small.
+    //
+    // The reveal vsize depends on the leaf script length, which depends on
+    // the compressed body+header+trailer. The trailer is 69 bytes regardless
+    // of which signature value the user produces, so we can compress with a
+    // placeholder trailer and get a leaf script size that exactly matches
+    // what Step 5 will compute. Slightly redundant work — Step 5 does it
+    // again for real — but it ensures the threshold shown here matches the
+    // threshold enforced there.
+    const fr = parseFloat(document.getElementById('feeRate').value);
+    if (!isFinite(fr) || fr <= 0) throw new Error('Fee rate must be a positive number');
+    if (fr > 1000) throw new Error('Fee rate is capped at 1000 sat/vB.');
+    const placeholderTrailer = Buffer.alloc(69);
+    const uncEst = Buffer.concat([header, body, placeholderTrailer]);
+    const compEst = Buffer.from(pako.deflate(uncEst, { level: 9 }));
+    // Mirror Step 5's leaf-script byte count exactly:
+    //   prefix:           34 bytes  (32-byte x-only pubkey + 1-byte push + 1-byte OP_CHECKSIG)
+    //   envelope opener:   2 bytes  (OP_FALSE OP_IF)
+    //   "ord" push:        4 bytes  (1-byte len + 3 bytes)
+    //   protocol id push:  2 bytes  (1-byte len + 1 byte)
+    //   MIME push:        22 bytes  (1-byte len + 21 bytes 'application/x-bip47db')
+    //   body marker push:  2 bytes  (1-byte len + 1 byte)
+    //   chunks:            comp.length + per-chunk push overhead
+    //                      Each ≤520-byte chunk uses 3-byte push (OP_PUSHDATA2)
+    //                      since 520 > 0xff. The last (possibly smaller) chunk
+    //                      may use 1- or 2-byte push, but worst-case is 3.
+    //   envelope closer:   1 byte   (OP_ENDIF)
+    const numChunks = Math.ceil(compEst.length / 520);
+    const lsLengthEst = 34 + 2 + 4 + 2 + 22 + 2 + compEst.length + (numChunks * 3) + 1;
+    const revealVsize = 160 + Math.ceil(lsLengthEst / 4);
+    const revealFee = Math.ceil(revealVsize * fr);
+    const commitFee = Math.ceil(155 * fr);
+    const REVEAL_OUTPUT = 546;
+    const MIN_RECEIVE_OUTPUT = 546; // dust threshold for P2WPKH/P2TR
+    const minUtxo = REVEAL_OUTPUT + revealFee + commitFee + MIN_RECEIVE_OUTPUT;
+    const utxoValueSats = parseInt(utxoValue);
+    if (!isFinite(utxoValueSats) || utxoValueSats <= 0)
+      throw new Error('UTXO value must be a positive integer (sats)');
+    if (utxoValueSats < minUtxo) {
+      throw new Error(
+        `Funding UTXO too small: ${utxoValueSats} sats provided, ` +
+        `${minUtxo} sats required minimum at ${fr} sat/vB.\n\n` +
+        `Breakdown:\n` +
+        `  Reveal output:  ${REVEAL_OUTPUT} sats (becomes the inscription UTXO)\n` +
+        `  Reveal fee:     ${revealFee} sats (prepaid in commit)\n` +
+        `  Commit fee:     ${commitFee} sats\n` +
+        `  Min receive:    ${MIN_RECEIVE_OUTPUT} sats (avoids dust output to your address)\n` +
+        `  ─────────────────────\n` +
+        `  Total:          ${minUtxo} sats\n\n` +
+        `Use a larger UTXO, or lower the fee rate (currently ${fr} sat/vB).`);
+    }
+
     const eph = genEphemeral();
 
     buildState = { rawCodes, header, body, msgHash, publisherPubkey: pp,
