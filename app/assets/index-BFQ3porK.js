@@ -12772,15 +12772,24 @@ PROCEED WITH CAUTION!
     }
   });
   document.getElementById("btnFetch").addEventListener("click", async () => {
+    var _a3;
     const e = document.getElementById("utxoRef").value.trim();
     if (!e.includes(":")) return alert("Format: TXID:VOUT");
     const [t, n] = e.split(":");
     try {
-      const r = await (await fetch(`${ae().mempoolApi}/tx/${t}/hex`)).text(), i = await (await fetch(`${ae().mempoolApi}/tx/${t}`)).json();
-      document.getElementById("utxoHex").value = r, document.getElementById("utxoValue").value = i.vout[parseInt(n)].value, alert("Fetched!");
-    } catch {
-      alert("Fetch failed.");
+      const r = await fetch(`${ae().mempoolApi}/tx/${t}/hex`);
+      if (!r.ok) throw new Error(`Hex fetch returned ${r.status}`);
+      const i = await r.text(), o = await fetch(`${ae().mempoolApi}/tx/${t}`);
+      if (!o.ok) throw new Error(`TX fetch returned ${o.status}`);
+      const s = await o.json(), a = parseInt(n);
+      if (!s.vout || !s.vout[a]) throw new Error(`vout ${a} doesn't exist (tx has ${((_a3 = s.vout) == null ? void 0 : _a3.length) || 0} outputs)`);
+      document.getElementById("utxoHex").value = i, document.getElementById("utxoValue").value = s.vout[a].value, alert("Fetched!");
+    } catch (r) {
+      alert("Fetch failed: " + r.message);
     }
+  });
+  document.getElementById("utxoRef").addEventListener("input", () => {
+    document.getElementById("utxoHex").value = "", document.getElementById("utxoValue").value = "";
   });
   document.getElementById("btnFetchFee").addEventListener("click", async () => {
     try {

@@ -690,12 +690,30 @@ document.getElementById('btnFetch').addEventListener('click', async () => {
   if (!ref.includes(':')) return alert('Format: TXID:VOUT');
   const [txid, vout] = ref.split(':');
   try {
-    const hex = await (await fetch(`${NET().mempoolApi}/tx/${txid}/hex`)).text();
-    const tx = await (await fetch(`${NET().mempoolApi}/tx/${txid}`)).json();
+    const hexRes = await fetch(`${NET().mempoolApi}/tx/${txid}/hex`);
+    if (!hexRes.ok) throw new Error(`Hex fetch returned ${hexRes.status}`);
+    const hex = await hexRes.text();
+    const txRes = await fetch(`${NET().mempoolApi}/tx/${txid}`);
+    if (!txRes.ok) throw new Error(`TX fetch returned ${txRes.status}`);
+    const tx = await txRes.json();
+    const voutIdx = parseInt(vout);
+    if (!tx.vout || !tx.vout[voutIdx])
+      throw new Error(`vout ${voutIdx} doesn't exist (tx has ${tx.vout?.length || 0} outputs)`);
     document.getElementById('utxoHex').value = hex;
-    document.getElementById('utxoValue').value = tx.vout[parseInt(vout)].value;
+    document.getElementById('utxoValue').value = tx.vout[voutIdx].value;
     alert('Fetched!');
-  } catch (e) { alert('Fetch failed.'); }
+  } catch (e) {
+    alert('Fetch failed: ' + e.message);
+  }
+});
+
+// Clear hex and value whenever the user edits the UTXO ref. Otherwise stale
+// data from the previous tx remains in those fields, and downstream steps
+// would build a transaction with mismatched UTXO information. The user has
+// to click Fetch again to repopulate — the right behaviour anyway.
+document.getElementById('utxoRef').addEventListener('input', () => {
+  document.getElementById('utxoHex').value = '';
+  document.getElementById('utxoValue').value = '';
 });
 
 document.getElementById('btnFetchFee').addEventListener('click', async () => {
