@@ -25,7 +25,7 @@ The protocol was motivated by the seizure of Samourai Wallet's infrastructure in
 | Live URL                             | Source                   | Description                                     |
 |--------------------------------------|--------------------------|-------------------------------------------------|
 | [`bip47db.org/`](https://bip47db.org/)        | `index.html`             | Landing page                                    |
-| [`bip47db.org/paper/`](https://bip47db.org/paper/)   | `paper/whitepaper.md`    | Protocol whitepaper (current draft: v1.4)       |
+| [`bip47db.org/paper/`](https://bip47db.org/paper/)   | `paper/whitepaper.md`    | Protocol whitepaper (v1.6)                      |
 | [`bip47db.org/docs/`](https://bip47db.org/docs/)    | `docs/PUBLISHER.md`      | Publisher app documentation                     |
 | [`bip47db.org/app/`](https://bip47db.org/app/)     | `app-src/` → built to `app/` | Publisher web app (inscribe & browse tool)  |
 
@@ -74,7 +74,7 @@ In brief:
 
 ## Status
 
-**DRAFT** — The protocol specification is at v1.5 and under active community review. The specification may change based on feedback. The Publisher app is functional and has been used for testnet4 inscriptions; mainnet use is at your own risk.
+The protocol specification is at v1.6 and is open for community review. The wire format and signing scheme have been stable since v1.4 (April 2026), with subsequent releases comprising documentation refinements. The Publisher app is functional and has been used for testnet4 inscriptions; mainnet inscriptions are now supported and self-service, with the same caveat that applies to any unaudited Bitcoin tooling — exercise normal caution and start with small amounts.
 
 ## License
 
