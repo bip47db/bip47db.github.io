@@ -6,14 +6,14 @@ The tool has two main tabs: **INSCRIBE** (publish payment codes on-chain) and **
 
 ## Network Support
 
-The tool defaults to **Mainnet** and supports switching to **Testnet4** via toggle buttons in the navigation bar. Each network has its own:
+The tool defaults to **Mainnet** and supports switching to **Testnet4** via a Bitcoin-logo dropdown selector in the navigation bar. Mainnet is shown by the Bitcoin glyph in orange; testnet4 in grey. Each network has its own:
 
 - Bitcoin network parameters (address prefixes, BIP32 keys)
 - Canonical NUMS deposit address
 - mempool.space API endpoint
 - IndexedDB database (`bip47db_testnet4` / `bip47db_mainnet`)
 
-Switching networks resets the inscribe form and clears the browse display since each network has a separate database. There is no cross-contamination between networks. When the active network is testnet4, a yellow banner appears below the nav bar as a "funny-money" indicator; mainnet has no banner because the active nav button already conveys the network.
+Switching networks resets the inscribe form and clears the browse display since each network has a separate database. There is no cross-contamination between networks. When the active network is testnet4, a yellow banner appears below the nav bar as a "funny-money" indicator; mainnet has no banner because the orange Bitcoin glyph in the dropdown already conveys the network.
 
 **Canonical deposit addresses:**
 
@@ -45,7 +45,7 @@ A textarea with a line-numbered gutter where payment codes are entered one per l
 
 **Fetching from PayNym.rs:**
 
-The "Fetch from PayNym.rs" button queries the PayNym.rs API (`GET /api/v1/nyms?page=N&limit=200`) via a CORS proxy (`corsproxy.io`). The tool paginates through the API until the requested limit is reached or the API returns no more data.
+The "Fetch from PayNym.rs" button queries the PayNym.rs API (`GET /api/v1/nyms?page=N&limit=200`) via a self-hosted Cloudflare Worker that relays the request and adds the CORS headers required for browser-based fetches. The Worker only proxies requests to `paynym.rs/api/v1/nyms` and only accepts requests originating from `bip47db.org` (and `localhost` for development); it cannot be used as an open relay. The tool paginates through the API until the requested limit is reached or the API returns no more data.
 
 Two parameters control the fetch:
 
@@ -119,8 +119,9 @@ Clicking "Generate message hash" performs the following:
    - **Header** (8 bytes): magic `0x47DB`, version `0x01`, record count (4 bytes big-endian), flags `0x01`
    - **Body**: N × 81 bytes (80-byte payment code + 1-byte per-record flags)
 4. Computes SHA-256 of the header + body concatenation
-5. Generates an **ephemeral secp256k1 keypair** (used for the commit/reveal Taproot output; discarded after broadcast)
-6. Displays the message hash (hex) for the user to sign
+5. Performs a **UTXO size pre-flight check**: compresses the payload (with a placeholder trailer) to compute the exact reveal transaction vsize, calculates the total cost (reveal output 546 sats + reveal fee + commit fee + minimum receive output 546 sats), and compares against the funding UTXO value entered in Step 3. If the UTXO is too small, the tool refuses to proceed and shows a detailed cost breakdown. This check exists at Step 4 specifically so the user is not asked to sign with their wallet only to discover at Step 5 that the funding UTXO can't cover the transaction.
+6. Generates an **ephemeral secp256k1 keypair** (used for the commit/reveal Taproot output; discarded after broadcast)
+7. Displays the message hash (hex) for the user to sign
 
 The user is instructed to sign this hash with their BIP47 notification address private key, using the Sign Message function in Ashigaru or Samourai. The wallet wraps the message with the BIP-137 Bitcoin Signed Message format and produces a base64 signature for the user to copy.
 
@@ -306,7 +307,7 @@ Each record is an 80-byte raw BIP47 v1 payment code followed by a 1-byte per-rec
 
 ### CORS Proxy
 
-The PayNym.rs API does not include CORS headers, so browser-based `fetch()` calls are blocked by same-origin policy. The tool routes API requests through `corsproxy.io` as a workaround. Users can bypass this entirely by using the "Paste JSON manually" option.
+The PayNym.rs API does not include CORS headers, so browser-based `fetch()` calls are blocked by same-origin policy. The tool routes API requests through a self-hosted Cloudflare Worker (`black-bread-8395.max-f0a.workers.dev`) which adds the required CORS headers. The Worker enforces an Origin allowlist (only `bip47db.org` and `localhost:5173` accepted) and a destination allowlist (only `paynym.rs/api/v1/nyms` proxied), so it cannot be repurposed as an open relay. Users who prefer not to route through any proxy can bypass it entirely by using the "Paste JSON manually" option.
 
 ### IndexedDB Schema
 
